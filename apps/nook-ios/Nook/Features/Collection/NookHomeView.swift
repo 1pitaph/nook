@@ -277,7 +277,7 @@ private struct NookInputBar: View {
             .font(textFont)
             .foregroundStyle(NookTheme.primaryText)
             .lineLimit(1...5)
-            .frame(height: textHeight, alignment: textAlignment)
+            .frame(maxWidth: .infinity, minHeight: textHeight, maxHeight: textHeight, alignment: textAlignment)
             .focused($isFocused)
             .submitLabel(.send)
             .onSubmit {
@@ -306,6 +306,10 @@ private struct NookInputBar: View {
             }
         }
         .frame(minHeight: textHeight, maxHeight: textHeight, alignment: textAlignment)
+        .contentShape(Rectangle())
+        .onTapGesture {
+          isFocused = true
+        }
         .onPreferenceChange(NookTextHeightPreferenceKey.self) { newHeight in
           measuredTextHeight = min(max(newHeight, minTextHeight), maxTextHeight)
         }
