@@ -147,11 +147,15 @@ private struct NookBottomDock: View {
   var model: NookHomeModel
 
   var body: some View {
+    let showsSuggestions = model.shouldShowSuggestions
+
     VStack(spacing: 14) {
-      if model.shouldShowSuggestions {
-        NookSuggestionRow(model: model)
-          .transition(.move(edge: .bottom).combined(with: .opacity))
-      }
+      NookSuggestionRow(model: model)
+        .frame(height: showsSuggestions ? 88 : 0)
+        .opacity(showsSuggestions ? 1 : 0)
+        .scaleEffect(showsSuggestions ? 1 : 0.98, anchor: .bottom)
+        .allowsHitTesting(showsSuggestions)
+        .clipped()
 
       NookInputBar(model: model)
     }
@@ -170,7 +174,7 @@ private struct NookBottomDock: View {
       )
       .ignoresSafeArea()
     )
-    .animation(.snappy(duration: 0.28), value: model.shouldShowSuggestions)
+    .animation(.snappy(duration: 0.28), value: showsSuggestions)
   }
 }
 
@@ -236,16 +240,22 @@ private struct NookSuggestionCard: View {
 private struct NookInputBar: View {
   @Bindable var model: NookHomeModel
   @FocusState private var isFocused: Bool
+  @State private var measuredTextHeight: CGFloat = 24
+
+  private let textFont = Font.system(size: 20, weight: .regular)
+  private let controlSize: CGFloat = 56
+  private let minTextHeight: CGFloat = 24
+  private let maxTextHeight: CGFloat = 124
 
   var body: some View {
-    HStack(alignment: .center, spacing: 10) {
+    HStack(alignment: .bottom, spacing: 10) {
       Button {
         model.openAddMenu()
       } label: {
         Image(systemName: "plus")
           .font(.system(size: 25, weight: .semibold))
           .foregroundStyle(NookTheme.primaryText)
-          .frame(width: 58, height: 58)
+          .frame(width: controlSize, height: controlSize)
           .background(NookTheme.elevatedSurface, in: Circle())
           .overlay(Circle().stroke(NookTheme.hairline, lineWidth: 0.5))
           .nookShadow()
@@ -254,19 +264,20 @@ private struct NookInputBar: View {
       .accessibilityLabel("Add source")
 
       HStack(alignment: .center, spacing: 10) {
-        ZStack(alignment: .leading) {
+        ZStack(alignment: textAlignment) {
           if model.draft.isEmpty {
             Text("Ask nook")
-              .font(.system(size: 20, weight: .regular))
+              .font(textFont)
               .foregroundStyle(NookTheme.tertiaryText)
               .frame(maxWidth: .infinity, alignment: .leading)
               .allowsHitTesting(false)
           }
 
           TextField("", text: $model.draft, axis: .vertical)
-            .font(.system(size: 20, weight: .regular))
+            .font(textFont)
             .foregroundStyle(NookTheme.primaryText)
-            .lineLimit(1...3)
+            .lineLimit(1...5)
+            .frame(height: textHeight, alignment: textAlignment)
             .focused($isFocused)
             .submitLabel(.send)
             .onSubmit {
@@ -275,10 +286,29 @@ private struct NookInputBar: View {
             .onChange(of: isFocused) { _, focused in
               if focused {
                 model.focusDraft()
+              } else {
+                model.blurDraft()
+              }
+            }
+
+          Text(measurementText)
+            .font(textFont)
+            .lineLimit(1...5)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .hidden()
+            .accessibilityHidden(true)
+            .background {
+              GeometryReader { proxy in
+                Color.clear
+                  .preference(key: NookTextHeightPreferenceKey.self, value: proxy.size.height)
               }
             }
         }
-        .frame(minHeight: 24)
+        .frame(minHeight: textHeight, maxHeight: textHeight, alignment: textAlignment)
+        .onPreferenceChange(NookTextHeightPreferenceKey.self) { newHeight in
+          measuredTextHeight = min(max(newHeight, minTextHeight), maxTextHeight)
+        }
 
         Button {
           model.toggleRecording()
@@ -293,17 +323,24 @@ private struct NookInputBar: View {
       }
       .padding(.leading, 18)
       .padding(.trailing, 12)
+      .padding(.vertical, 6)
       .frame(maxWidth: .infinity)
-      .frame(minHeight: 58)
-      .background(NookTheme.elevatedSurface, in: Capsule())
-      .overlay(Capsule().stroke(NookTheme.hairline, lineWidth: 0.5))
+      .frame(minHeight: controlSize)
+      .background(
+        NookTheme.elevatedSurface,
+        in: RoundedRectangle(cornerRadius: inputCornerRadius, style: .continuous)
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: inputCornerRadius, style: .continuous)
+          .stroke(NookTheme.hairline, lineWidth: 0.5)
+      )
       .nookShadow()
 
       NookIconButton(
         systemName: model.mode == .sending ? "hourglass" : "arrow.up",
         accessibilityLabel: "Send collection item",
         style: .dark,
-        size: 58
+        size: controlSize
       ) {
         model.sendDraft()
         isFocused = false
@@ -315,6 +352,30 @@ private struct NookInputBar: View {
         model.mode = .editing
       }
     }
+  }
+
+  private var textHeight: CGFloat {
+    min(max(measuredTextHeight, minTextHeight), maxTextHeight)
+  }
+
+  private var measurementText: String {
+    model.draft.isEmpty ? "Ask nook" : model.draft
+  }
+
+  private var textAlignment: Alignment {
+    textHeight > minTextHeight + 2 ? .topLeading : .leading
+  }
+
+  private var inputCornerRadius: CGFloat {
+    28
+  }
+}
+
+private struct NookTextHeightPreferenceKey: PreferenceKey {
+  static let defaultValue: CGFloat = 24
+
+  static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+    value = max(value, nextValue())
   }
 }
 

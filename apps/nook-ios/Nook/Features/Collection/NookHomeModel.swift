@@ -31,12 +31,18 @@ final class NookHomeModel {
   }
 
   var shouldShowSuggestions: Bool {
-    entries.isEmpty && mode != .recording
+    entries.isEmpty && mode != .recording && draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
   func focusDraft() {
     if mode == .idle {
       mode = .editing
+    }
+  }
+
+  func blurDraft() {
+    if mode == .editing && draft.isEmpty {
+      mode = .idle
     }
   }
 
