@@ -27,9 +27,9 @@ struct NookHomeView: View {
         NookAddMenu(model: model)
           .presentationDetents([.height(310)])
           .presentationDragIndicator(.visible)
-      case .status:
-        NookCollectionStatusView(model: model)
-          .presentationDetents([.height(380)])
+      case .categories:
+        NookCollectionCategoriesView(model: model)
+          .presentationDetents([.height(620), .large])
           .presentationDragIndicator(.visible)
       case let .capture(message):
         NookCapturePlaceholder(message: message)
@@ -53,13 +53,13 @@ private struct NookTopBar: View {
 
       Spacer()
 
-      NookPillButton(
-        title: "\(model.entries.count)",
-        systemName: model.entries.isEmpty ? "tray" : "tray.full"
+      NookIconButton(
+        systemName: "square.grid.2x2",
+        accessibilityLabel: "Open collection categories",
+        size: 52
       ) {
-        model.openCollectionStatus()
+        model.openCollectionCategories()
       }
-      .accessibilityLabel("Open collection status")
     }
     .frame(height: 58)
   }
@@ -425,90 +425,172 @@ private struct NookAddMenu: View {
   }
 }
 
-private struct NookCollectionStatusView: View {
+private struct NookCollectionCategoriesView: View {
   var model: NookHomeModel
+  @State private var path: [CollectionCategory] = []
+
+  private let columns = [
+    GridItem(.flexible(), spacing: 12),
+    GridItem(.flexible(), spacing: 12)
+  ]
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 22) {
-      HStack {
-        VStack(alignment: .leading, spacing: 4) {
-          Text("nook")
-            .font(.system(size: 28, weight: .bold, design: .rounded))
-            .foregroundStyle(NookTheme.primaryText)
+    NavigationStack(path: $path) {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 20) {
+          NookCategoryHeader(totalCount: model.entries.count)
 
-          Text(collectionSummary)
-            .font(.system(size: 16, weight: .medium))
-            .foregroundStyle(NookTheme.secondaryText)
+          LazyVGrid(columns: columns, spacing: 12) {
+            ForEach(CollectionCategory.allCases) { category in
+              NavigationLink(value: category) {
+                NookCategoryTile(
+                  category: category,
+                  count: model.count(for: category)
+                )
+              }
+              .buttonStyle(.plain)
+            }
+          }
         }
+        .padding(24)
+        .padding(.top, 4)
+        .padding(.bottom, 28)
+      }
+      .scrollIndicators(.hidden)
+      .navigationDestination(for: CollectionCategory.self) { category in
+        NookCategoryDetailView(model: model, category: category)
+      }
+    }
+  }
+}
 
-        Spacer()
+private struct NookCategoryHeader: View {
+  var totalCount: Int
 
-        Image(systemName: "sparkles")
-          .font(.system(size: 22, weight: .semibold))
+  var body: some View {
+    HStack(alignment: .center) {
+      VStack(alignment: .leading, spacing: 4) {
+        Text("Collection")
+          .font(.system(size: 31, weight: .bold, design: .rounded))
           .foregroundStyle(NookTheme.primaryText)
-          .frame(width: 52, height: 52)
-          .background(NookTheme.surface, in: Circle())
+
+        Text(totalLabel)
+          .font(.system(size: 15, weight: .medium))
+          .foregroundStyle(NookTheme.secondaryText)
       }
-
-      VStack(spacing: 10) {
-        statusRow(title: "Captured", value: "\(model.entries.count)")
-        statusRow(title: "Current source", value: model.selectedSource.label)
-        statusRow(title: "Mode", value: modeLabel)
-      }
-
-      Button {
-        model.activeSheet = nil
-        model.openAddMenu()
-      } label: {
-        Label("Add something", systemImage: "plus")
-          .font(.system(size: 17, weight: .semibold))
-          .frame(maxWidth: .infinity)
-          .frame(height: 54)
-          .foregroundStyle(.white)
-          .background(NookTheme.primaryText, in: Capsule())
-      }
-      .buttonStyle(.plain)
-
-      Spacer(minLength: 0)
-    }
-    .padding(24)
-  }
-
-  private var collectionSummary: String {
-    if model.entries.isEmpty {
-      return "A quiet space for collecting thoughts, links, files, and voice notes."
-    }
-    return "Your newest captures are waiting to be shaped."
-  }
-
-  private var modeLabel: String {
-    switch model.mode {
-    case .idle:
-      "Idle"
-    case .editing:
-      "Writing"
-    case .sending:
-      "Saving"
-    case .recording:
-      "Recording"
-    }
-  }
-
-  private func statusRow(title: String, value: String) -> some View {
-    HStack {
-      Text(title)
-        .font(.system(size: 16, weight: .medium))
-        .foregroundStyle(NookTheme.secondaryText)
 
       Spacer()
 
-      Text(value)
-        .font(.system(size: 16, weight: .semibold))
+      Image(systemName: "square.grid.2x2")
+        .font(.system(size: 22, weight: .semibold))
         .foregroundStyle(NookTheme.primaryText)
+        .frame(width: 52, height: 52)
+        .background(NookTheme.surface, in: Circle())
     }
-    .padding(.horizontal, 16)
-    .frame(height: 50)
-    .background(NookTheme.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    .accessibilityElement(children: .combine)
+  }
+
+  private var totalLabel: String {
+    if totalCount == 1 {
+      return "1 capture sorted by category"
+    }
+    return "\(totalCount) captures sorted by category"
+  }
+}
+
+private struct NookCategoryTile: View {
+  let category: CollectionCategory
+  let count: Int
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 12) {
+      VStack(alignment: .leading, spacing: 12) {
+        Image(systemName: category.symbolName)
+          .font(.system(size: 18, weight: .semibold))
+          .foregroundStyle(NookTheme.primaryText)
+          .frame(width: 34, height: 34)
+          .background(Color.black.opacity(0.055), in: Circle())
+
+        Text(category.label)
+          .font(.system(size: 22, weight: .bold))
+          .foregroundStyle(NookTheme.primaryText)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+      }
+
+      Spacer(minLength: 4)
+
+      Text("\(count)")
+        .font(.system(size: 38, weight: .bold))
+        .foregroundStyle(NookTheme.primaryText)
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+    .padding(16)
+    .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+    .background(NookTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .overlay(
+      RoundedRectangle(cornerRadius: 20, style: .continuous)
+        .stroke(NookTheme.hairline, lineWidth: 0.5)
+    )
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("\(category.label), \(count)")
+  }
+}
+
+private struct NookCategoryDetailView: View {
+  var model: NookHomeModel
+  let category: CollectionCategory
+
+  var body: some View {
+    let entries = model.entries(for: category)
+
+    ScrollView {
+      if entries.isEmpty {
+        NookCategoryEmptyState(category: category)
+          .frame(maxWidth: .infinity)
+          .frame(minHeight: 360)
+          .padding(.horizontal, 24)
+      } else {
+        LazyVStack(spacing: 12) {
+          ForEach(entries) { entry in
+            NookEntryCard(entry: entry)
+          }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 12)
+        .padding(.bottom, 28)
+      }
+    }
+    .scrollIndicators(.hidden)
+    .navigationTitle(category.label)
+    .navigationBarTitleDisplayMode(.inline)
+  }
+}
+
+private struct NookCategoryEmptyState: View {
+  let category: CollectionCategory
+
+  var body: some View {
+    VStack(spacing: 14) {
+      Image(systemName: category.symbolName)
+        .font(.system(size: 30, weight: .semibold))
+        .foregroundStyle(NookTheme.primaryText)
+        .frame(width: 62, height: 62)
+        .background(NookTheme.surface, in: Circle())
+
+      Text("No \(category.label) yet")
+        .font(.system(size: 21, weight: .bold, design: .rounded))
+        .foregroundStyle(NookTheme.primaryText)
+
+      Text("New captures will appear here when they match this category.")
+        .font(.system(size: 16, weight: .medium))
+        .foregroundStyle(NookTheme.secondaryText)
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: 280)
+    }
+    .accessibilityElement(children: .combine)
   }
 }
 

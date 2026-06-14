@@ -34,6 +34,16 @@ final class NookHomeModel {
     entries.isEmpty && mode != .recording && draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
+  func count(for category: CollectionCategory) -> Int {
+    entries(for: category).count
+  }
+
+  func entries(for category: CollectionCategory) -> [CollectionEntry] {
+    entries.filter { entry in
+      Self.entry(entry, matches: category)
+    }
+  }
+
   func focusDraft() {
     if mode == .idle {
       mode = .editing
@@ -101,8 +111,8 @@ final class NookHomeModel {
     }
   }
 
-  func openCollectionStatus() {
-    activeSheet = .status
+  func openCollectionCategories() {
+    activeSheet = .categories
   }
 
   func openAddMenu() {
@@ -135,19 +145,109 @@ final class NookHomeModel {
     }
     return Array(Set(tags)).sorted()
   }
+
+  private static func entry(_ entry: CollectionEntry, matches category: CollectionCategory) -> Bool {
+    let searchableText = ([entry.title, entry.detail] + entry.tags)
+      .joined(separator: " ")
+      .lowercased()
+
+    switch category {
+    case .pin:
+      return containsAny(["pin", "pinned", "save", "saved"], in: searchableText)
+    case .todo:
+      return containsAny(["todo", "to-do", "task", "checklist", "check list", "- [ ]"], in: searchableText)
+    case .highlight:
+      return containsAny(["highlight", "highlights", "important", "key point", "keypoint"], in: searchableText)
+    case .quotes:
+      return containsAny(["quote", "quotes"], in: searchableText)
+        || searchableText.contains("\"")
+        || searchableText.contains("“")
+        || searchableText.contains("”")
+    case .photos:
+      return entry.source == .image
+    case .audio:
+      return entry.source == .voice
+    case .links:
+      return entry.source == .link
+        || containsAny(["link", "http://", "https://", "www."], in: searchableText)
+    case .remind:
+      return containsAny(["remind", "reminder", "tomorrow", "later", "due", "follow up", "follow-up"], in: searchableText)
+    }
+  }
+
+  private static func containsAny(_ needles: [String], in haystack: String) -> Bool {
+    needles.contains { haystack.contains($0) }
+  }
+}
+
+enum CollectionCategory: String, CaseIterable, Identifiable, Hashable {
+  case pin
+  case todo
+  case highlight
+  case quotes
+  case photos
+  case audio
+  case links
+  case remind
+
+  var id: String {
+    rawValue
+  }
+
+  var label: String {
+    switch self {
+    case .pin:
+      "Pin"
+    case .todo:
+      "To-Do"
+    case .highlight:
+      "Highlight"
+    case .quotes:
+      "Quotes"
+    case .photos:
+      "Photos"
+    case .audio:
+      "Audio"
+    case .links:
+      "Links"
+    case .remind:
+      "Remind"
+    }
+  }
+
+  var symbolName: String {
+    switch self {
+    case .pin:
+      "pin"
+    case .todo:
+      "checklist"
+    case .highlight:
+      "highlighter"
+    case .quotes:
+      "quote.opening"
+    case .photos:
+      "photo"
+    case .audio:
+      "waveform"
+    case .links:
+      "link"
+    case .remind:
+      "bell"
+    }
+  }
 }
 
 enum NookSheet: Identifiable, Equatable {
   case add
-  case status
+  case categories
   case capture(String)
 
   var id: String {
     switch self {
     case .add:
       "add"
-    case .status:
-      "status"
+    case .categories:
+      "categories"
     case let .capture(message):
       "capture-\(message)"
     }

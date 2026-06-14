@@ -6,7 +6,7 @@
 
 这是 `Prototype / 0.1.0` 阶段的交互原型。
 
-- 已实现：底部输入栏、快捷建议、收集条目卡片、添加来源菜单、收集状态面板、SwiftUI Preview。
+- 已实现：底部输入栏、快捷建议、收集条目卡片、添加来源菜单、收集分类面板、SwiftUI Preview。
 - 已占位：图片选择器、文件导入、语音录制与转写。
 - 尚未实现：本地持久化、账号体系、同步、真实 AI 摘要与归档。
 
@@ -49,7 +49,7 @@ xcodebuild -project apps/nook-ios/Nook.xcodeproj \
 Nook/App/                    App 入口
 Nook/Components/             复用按钮组件
 Nook/Design/                 NookTheme 与基础视觉样式
-Nook/Features/Collection/    首页、输入栏、收集状态和交互模型
+Nook/Features/Collection/    首页、输入栏、收集分类和交互模型
 Nook/Models/                 CollectionEntry 与 NookSuggestion
 Nook/Resources/              App icon、accent color 等资源
 project.yml                  XcodeGen 项目配置
