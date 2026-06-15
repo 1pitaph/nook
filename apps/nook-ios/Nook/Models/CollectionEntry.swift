@@ -45,6 +45,8 @@ struct CollectionEntry: Identifiable, Equatable {
   var source: Source
   var createdAt: Date
   var tags: [String]
+  var linkURL: URL?
+  var imageData: Data?
 
   init(
     id: UUID = UUID(),
@@ -52,7 +54,9 @@ struct CollectionEntry: Identifiable, Equatable {
     detail: String,
     source: Source = .text,
     createdAt: Date = .now,
-    tags: [String] = []
+    tags: [String] = [],
+    linkURL: URL? = nil,
+    imageData: Data? = nil
   ) {
     self.id = id
     self.title = title
@@ -60,6 +64,8 @@ struct CollectionEntry: Identifiable, Equatable {
     self.source = source
     self.createdAt = createdAt
     self.tags = tags
+    self.linkURL = linkURL
+    self.imageData = imageData
   }
 }
 
@@ -74,7 +80,14 @@ extension CollectionEntry {
       title: "Article to read later",
       detail: "https://example.com/chat-shaped-collection",
       source: .link,
-      tags: ["reading"]
+      tags: ["link", "reading"],
+      linkURL: URL(string: "https://example.com/chat-shaped-collection")
+    ),
+    CollectionEntry(
+      title: "Photo from library",
+      detail: "Image selected from Photos.",
+      source: .image,
+      tags: ["image", "photo"]
     )
   ]
 }

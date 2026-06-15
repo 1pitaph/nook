@@ -69,18 +69,40 @@ final class NookHomeModel {
     }
 
     mode = .sending
-    let title = Self.title(for: content)
+    let linkURL = Self.firstLink(in: content)
+    let finalSource: CollectionEntry.Source = linkURL == nil ? .text : .link
+    let title = Self.title(for: content, source: finalSource, linkURL: linkURL)
     let entry = CollectionEntry(
       title: title,
       detail: content,
-      source: selectedSource,
-      tags: Self.tags(for: content, source: selectedSource)
+      source: finalSource,
+      tags: Self.tags(for: content, source: finalSource, linkURL: linkURL),
+      linkURL: linkURL
     )
     entries.insert(entry, at: 0)
     draft = ""
     selectedSource = .text
     mode = .idle
     rotateSuggestions()
+  }
+
+  func addImage(data: Data) {
+    mode = .sending
+    let entry = CollectionEntry(
+      title: "Photo from library",
+      detail: "Image selected from Photos.",
+      source: .image,
+      tags: Self.tags(for: "", source: .image, linkURL: nil),
+      imageData: data
+    )
+    entries.insert(entry, at: 0)
+    selectedSource = .text
+    mode = .idle
+    rotateSuggestions()
+  }
+
+  func showCaptureMessage(_ message: String) {
+    activeSheet = .capture(message)
   }
 
   func add(source: CollectionEntry.Source) {
@@ -135,15 +157,68 @@ final class NookHomeModel {
     return String(cleaned.prefix(31)) + "..."
   }
 
-  private static func tags(for content: String, source: CollectionEntry.Source) -> [String] {
+  private static func title(
+    for content: String,
+    source: CollectionEntry.Source,
+    linkURL: URL?
+  ) -> String {
+    if source == .link, let host = linkURL?.host {
+      return host.replacingOccurrences(of: "www.", with: "")
+    }
+    return title(for: content)
+  }
+
+  private static func tags(
+    for content: String,
+    source: CollectionEntry.Source,
+    linkURL: URL?
+  ) -> [String] {
     var tags = [source.label.lowercased()]
     if content.localizedCaseInsensitiveContains("idea") {
       tags.append("idea")
     }
-    if content.localizedCaseInsensitiveContains("link") || content.contains("http") {
+    if source == .link && linkURL != nil {
       tags.append("link")
     }
+    if source == .image {
+      tags.append("photo")
+    }
     return Array(Set(tags)).sorted()
+  }
+
+  private static func firstLink(in content: String) -> URL? {
+    guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
+      return nil
+    }
+
+    let nsContent = content as NSString
+    let range = NSRange(location: 0, length: nsContent.length)
+    let matches = detector.matches(in: content, options: [], range: range)
+
+    for match in matches {
+      guard let url = match.url,
+            let normalizedURL = normalizedLink(url) else {
+        continue
+      }
+      return normalizedURL
+    }
+    return nil
+  }
+
+  private static func normalizedLink(_ url: URL) -> URL? {
+    let trailingPunctuation = CharacterSet(charactersIn: ".,;:!?)]}，。！？、；：）】」』")
+    var rawValue = url.absoluteString.trimmingCharacters(in: trailingPunctuation)
+
+    if rawValue.range(of: "www.", options: [.anchored, .caseInsensitive]) != nil {
+      rawValue = "https://\(rawValue)"
+    }
+
+    guard let normalizedURL = URL(string: rawValue),
+          let scheme = normalizedURL.scheme?.lowercased(),
+          scheme == "http" || scheme == "https" else {
+      return nil
+    }
+    return normalizedURL
   }
 
   private static func entry(_ entry: CollectionEntry, matches category: CollectionCategory) -> Bool {
@@ -169,7 +244,8 @@ final class NookHomeModel {
       return entry.source == .voice
     case .links:
       return entry.source == .link
-        || containsAny(["link", "http://", "https://", "www."], in: searchableText)
+        || entry.linkURL != nil
+        || containsAny(["http://", "https://", "www."], in: searchableText)
     case .remind:
       return containsAny(["remind", "reminder", "tomorrow", "later", "due", "follow up", "follow-up"], in: searchableText)
     }

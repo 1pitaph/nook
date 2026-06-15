@@ -1,4 +1,6 @@
+import PhotosUI
 import SwiftUI
+import UIKit
 
 struct NookHomeView: View {
   @State private var model = NookHomeModel()
@@ -69,35 +71,186 @@ private struct NookContentCanvas: View {
   var model: NookHomeModel
 
   var body: some View {
-    ScrollView {
-      LazyVStack(spacing: 12) {
-        if model.entries.isEmpty {
-          Color.clear
-            .frame(height: 420)
-            .accessibilityHidden(true)
-        } else {
-          ForEach(model.entries) { entry in
-            NookEntryCard(entry: entry)
-          }
-        }
-      }
-      .padding(.horizontal, 24)
-      .padding(.top, 24)
-      .padding(.bottom, model.shouldShowSuggestions ? 196 : 116)
-    }
-    .scrollIndicators(.hidden)
+    NookMessageTimeline(
+      entries: model.entries,
+      topPadding: 24,
+      bottomPadding: model.shouldShowSuggestions ? 196 : 116,
+      emptyHeight: 420,
+      scrollToLatest: true
+    )
   }
 }
 
-private struct NookEntryCard: View {
+private struct NookMessageTimeline: View {
+  let entries: [CollectionEntry]
+  var topPadding: CGFloat
+  var bottomPadding: CGFloat
+  var emptyHeight: CGFloat = 0
+  var scrollToLatest = false
+
+  private var displayEntries: [CollectionEntry] {
+    Array(entries.reversed())
+  }
+
+  var body: some View {
+    GeometryReader { geometry in
+      ScrollViewReader { scrollProxy in
+        ScrollView {
+          LazyVStack(spacing: 10) {
+            if entries.isEmpty {
+              Color.clear
+                .frame(height: emptyHeight)
+                .accessibilityHidden(true)
+            } else {
+              ForEach(displayEntries) { entry in
+                NookMessageRow(
+                  entry: entry,
+                  availableWidth: geometry.size.width
+                )
+                .id(entry.id)
+              }
+            }
+          }
+          .padding(.horizontal, 24)
+          .padding(.top, topPadding)
+          .padding(.bottom, bottomPadding)
+        }
+        .scrollIndicators(.hidden)
+        .defaultScrollAnchor(.bottom)
+        .onChange(of: entries.count) { _, _ in
+          guard scrollToLatest, let latestID = entries.first?.id else {
+            return
+          }
+          withAnimation(.snappy(duration: 0.28)) {
+            scrollProxy.scrollTo(latestID, anchor: .bottom)
+          }
+        }
+      }
+    }
+  }
+}
+
+private enum NookMessageSide {
+  case incoming
+  case outgoing
+
+  var isOutgoing: Bool {
+    self == .outgoing
+  }
+}
+
+private struct NookMessageRow: View {
   let entry: CollectionEntry
+  var availableWidth: CGFloat
+
+  private var side: NookMessageSide {
+    entry.source == .text ? .outgoing : .incoming
+  }
+
+  private var maxBubbleWidth: CGFloat {
+    let widthRatio = side.isOutgoing ? 0.76 : 0.84
+    let widthLimit: CGFloat = side.isOutgoing ? 500 : 560
+    return min(availableWidth * widthRatio, widthLimit)
+  }
+
+  var body: some View {
+    HStack(alignment: .bottom, spacing: 0) {
+      if side.isOutgoing {
+        Spacer(minLength: 48)
+      }
+
+      NookMessageBubble(entry: entry, side: side)
+        .frame(maxWidth: maxBubbleWidth, alignment: side.isOutgoing ? .trailing : .leading)
+
+      if !side.isOutgoing {
+        Spacer(minLength: 48)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: side.isOutgoing ? .trailing : .leading)
+  }
+}
+
+private struct NookMessageBubble: View {
+  let entry: CollectionEntry
+  let side: NookMessageSide
+
+  private var bubbleShape: UnevenRoundedRectangle {
+    UnevenRoundedRectangle(
+      cornerRadii: RectangleCornerRadii(
+        topLeading: 20,
+        bottomLeading: side.isOutgoing ? 20 : 8,
+        bottomTrailing: side.isOutgoing ? 8 : 20,
+        topTrailing: 20
+      ),
+      style: .continuous
+    )
+  }
+
+  var body: some View {
+    Group {
+      switch entry.source {
+      case .text:
+        NookTextBubbleContent(entry: entry)
+      case .link:
+        NookRichBubbleContent(entry: entry, accent: NookTheme.note) {
+          NookLinkBubbleContent(entry: entry)
+        }
+      case .image:
+        NookRichBubbleContent(entry: entry, accent: NookTheme.primaryText) {
+          NookImageBubbleContent(entry: entry)
+        }
+      case .voice, .file:
+        NookRichBubbleContent(entry: entry, accent: NookTheme.primaryText) {
+          Text(entry.detail)
+            .font(.system(size: 16, weight: .regular))
+            .foregroundStyle(NookTheme.secondaryText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+      }
+    }
+    .padding(entry.source == .text ? 15 : 14)
+    .background(side.isOutgoing ? NookTheme.active : NookTheme.surface, in: bubbleShape)
+    .overlay(
+      bubbleShape
+        .stroke(side.isOutgoing ? Color.clear : NookTheme.hairline, lineWidth: 0.5)
+    )
+    .accessibilityElement(children: .combine)
+  }
+}
+
+private struct NookTextBubbleContent: View {
+  let entry: CollectionEntry
+
+  var body: some View {
+    Text(entry.detail)
+      .font(.system(size: 17, weight: .regular))
+      .foregroundStyle(.white)
+      .fixedSize(horizontal: false, vertical: true)
+      .multilineTextAlignment(.leading)
+  }
+}
+
+private struct NookRichBubbleContent<Content: View>: View {
+  let entry: CollectionEntry
+  var accent: Color
+  let content: Content
+
+  init(
+    entry: CollectionEntry,
+    accent: Color,
+    @ViewBuilder content: () -> Content
+  ) {
+    self.entry = entry
+    self.accent = accent
+    self.content = content()
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(spacing: 10) {
         Image(systemName: entry.source.symbolName)
           .font(.system(size: 15, weight: .semibold))
-          .foregroundStyle(NookTheme.primaryText)
+          .foregroundStyle(accent)
           .frame(width: 30, height: 30)
           .background(Color.black.opacity(0.055), in: Circle())
 
@@ -111,35 +264,103 @@ private struct NookEntryCard: View {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(NookTheme.secondaryText)
         }
-
-        Spacer()
       }
 
+      content
+
+      NookTagRow(tags: entry.tags)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+private struct NookLinkBubbleContent: View {
+  let entry: CollectionEntry
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
       Text(entry.detail)
         .font(.system(size: 16, weight: .regular))
         .foregroundStyle(NookTheme.secondaryText)
-        .lineLimit(4)
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
 
-      if !entry.tags.isEmpty {
-        HStack(spacing: 8) {
-          ForEach(entry.tags, id: \.self) { tag in
-            Text(tag)
-              .font(.system(size: 12, weight: .semibold))
-              .foregroundStyle(NookTheme.primaryText.opacity(0.72))
-              .padding(.horizontal, 9)
-              .frame(height: 24)
-              .background(Color.black.opacity(0.045), in: Capsule())
-          }
+      if let linkURL = entry.linkURL {
+        HStack(spacing: 6) {
+          Image(systemName: "link")
+            .font(.system(size: 12, weight: .bold))
+
+          Text(linkLabel(for: linkURL))
+            .font(.system(size: 13, weight: .semibold))
+            .lineLimit(2)
+            .truncationMode(.middle)
+        }
+        .foregroundStyle(NookTheme.note)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+    }
+  }
+
+  private func linkLabel(for url: URL) -> String {
+    if let host = url.host {
+      return host.replacingOccurrences(of: "www.", with: "")
+    }
+    return url.absoluteString
+  }
+}
+
+private struct NookImageBubbleContent: View {
+  let entry: CollectionEntry
+
+  var body: some View {
+    if let imageData = entry.imageData,
+       let uiImage = UIImage(data: imageData) {
+      Image(uiImage: uiImage)
+        .resizable()
+        .scaledToFill()
+        .frame(maxWidth: .infinity)
+        .frame(height: 190)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+          RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .stroke(NookTheme.hairline, lineWidth: 0.5)
+        )
+        .accessibilityLabel("Selected photo")
+    } else {
+      ZStack {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+          .fill(Color.black.opacity(0.045))
+
+        VStack(spacing: 8) {
+          Image(systemName: "photo")
+            .font(.system(size: 28, weight: .semibold))
+
+          Text("Image preview unavailable")
+            .font(.system(size: 14, weight: .semibold))
+        }
+        .foregroundStyle(NookTheme.secondaryText)
+      }
+      .frame(height: 160)
+    }
+  }
+}
+
+private struct NookTagRow: View {
+  let tags: [String]
+
+  var body: some View {
+    if !tags.isEmpty {
+      HStack(spacing: 8) {
+        ForEach(tags, id: \.self) { tag in
+          Text(tag)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(NookTheme.primaryText.opacity(0.72))
+            .padding(.horizontal, 9)
+            .frame(height: 24)
+            .background(Color.black.opacity(0.045), in: Capsule())
         }
       }
     }
-    .padding(16)
-    .background(NookTheme.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    .overlay(
-      RoundedRectangle(cornerRadius: 22, style: .continuous)
-        .stroke(NookTheme.hairline, lineWidth: 0.5)
-    )
   }
 }
 
@@ -407,6 +628,7 @@ private struct NookTextHeightPreferenceKey: PreferenceKey {
 private struct NookAddMenu: View {
   var model: NookHomeModel
   @Environment(\.dismiss) private var dismiss
+  @State private var selectedPhotoItem: PhotosPickerItem?
 
   private let sources: [CollectionEntry.Source] = [.text, .link, .image, .voice, .file]
 
@@ -418,31 +640,71 @@ private struct NookAddMenu: View {
 
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 12)], spacing: 12) {
         ForEach(sources, id: \.self) { source in
-          Button {
-            dismiss()
-            model.add(source: source)
-          } label: {
-            VStack(spacing: 10) {
-              Image(systemName: source.symbolName)
-                .font(.system(size: 22, weight: .semibold))
-                .frame(width: 44, height: 44)
-                .background(Color.black.opacity(0.055), in: Circle())
-
-              Text(source.label)
-                .font(.system(size: 14, weight: .semibold))
+          if source == .image {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+              NookAddSourceTile(source: source)
             }
-            .foregroundStyle(NookTheme.primaryText)
-            .frame(maxWidth: .infinity)
-            .frame(height: 106)
-            .background(NookTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .buttonStyle(.plain)
+          } else {
+            Button {
+              dismiss()
+              model.add(source: source)
+            } label: {
+              NookAddSourceTile(source: source)
+            }
+            .buttonStyle(.plain)
           }
-          .buttonStyle(.plain)
         }
       }
 
       Spacer(minLength: 0)
     }
     .padding(24)
+    .onChange(of: selectedPhotoItem) { _, newItem in
+      guard let newItem else {
+        return
+      }
+      dismiss()
+      loadPhoto(newItem)
+    }
+  }
+
+  private func loadPhoto(_ item: PhotosPickerItem) {
+    Task {
+      do {
+        if let data = try await item.loadTransferable(type: Data.self) {
+          model.addImage(data: data)
+        } else {
+          model.showCaptureMessage("Nook could not read that image.")
+        }
+      } catch {
+        model.showCaptureMessage("Nook could not read that image.")
+      }
+
+      await MainActor.run {
+        selectedPhotoItem = nil
+      }
+    }
+  }
+}
+
+private struct NookAddSourceTile: View {
+  let source: CollectionEntry.Source
+
+  var body: some View {
+    VStack(spacing: 10) {
+      Image(systemName: source.symbolName)
+        .font(.system(size: 22, weight: .semibold))
+        .frame(width: 44, height: 44)
+        .background(Color.black.opacity(0.055), in: Circle())
+
+      Text(source.label)
+        .font(.system(size: 14, weight: .semibold))
+    }
+    .foregroundStyle(NookTheme.primaryText)
+    .frame(maxWidth: .infinity)
+    .frame(height: 106)
+    .background(NookTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
   }
 }
 
@@ -567,24 +829,23 @@ private struct NookCategoryDetailView: View {
   var body: some View {
     let entries = model.entries(for: category)
 
-    ScrollView {
+    Group {
       if entries.isEmpty {
-        NookCategoryEmptyState(category: category)
-          .frame(maxWidth: .infinity)
-          .frame(minHeight: 360)
-          .padding(.horizontal, 24)
-      } else {
-        LazyVStack(spacing: 12) {
-          ForEach(entries) { entry in
-            NookEntryCard(entry: entry)
-          }
+        ScrollView {
+          NookCategoryEmptyState(category: category)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 360)
+            .padding(.horizontal, 24)
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 12)
-        .padding(.bottom, 28)
+        .scrollIndicators(.hidden)
+      } else {
+        NookMessageTimeline(
+          entries: entries,
+          topPadding: 12,
+          bottomPadding: 28
+        )
       }
     }
-    .scrollIndicators(.hidden)
     .navigationTitle(category.label)
     .navigationBarTitleDisplayMode(.inline)
   }
@@ -646,8 +907,12 @@ private struct NookCapturePlaceholder: View {
   NookHomeView()
 }
 
-#Preview("With captures") {
-  NookPreviewHost(entries: CollectionEntry.samples)
+#Preview("With message bubbles") {
+  NookPreviewHost(entries: CollectionEntry.messageBubbleSamples)
+}
+
+#Preview("Long content") {
+  NookPreviewHost(entries: CollectionEntry.longMessageSamples)
 }
 
 private struct NookPreviewHost: View {
@@ -671,5 +936,69 @@ private struct NookPreviewHost: View {
       NookBottomDock(model: model)
     }
     .preferredColorScheme(.light)
+  }
+}
+
+private extension CollectionEntry {
+  static var messageBubbleSamples: [CollectionEntry] {
+    [
+      CollectionEntry(
+        title: "Photo from library",
+        detail: "Image selected from Photos.",
+        source: .image,
+        tags: ["image", "photo"],
+        imageData: NookPreviewImage.data
+      ),
+      CollectionEntry(
+        title: "example.com",
+        detail: "https://example.com/chat-shaped-collection",
+        source: .link,
+        tags: ["link", "reading"],
+        linkURL: URL(string: "https://example.com/chat-shaped-collection")
+      ),
+      CollectionEntry(
+        title: "Inbox structure for nook",
+        detail: "Keep capture, summarize, and archive as the first three gestures.",
+        source: .text,
+        tags: ["draft", "product"]
+      )
+    ]
+  }
+
+  static var longMessageSamples: [CollectionEntry] {
+    [
+      CollectionEntry(
+        title: "developer.apple.com",
+        detail: "这是一条很长的链接收藏，前面有一些说明文字，后面跟着一个很长的 URL，用来检查链接气泡在小屏幕上不会把布局撑开：https://developer.apple.com/documentation/photokit/bringing_photos_picker_to_your_swiftui_app",
+        source: .link,
+        tags: ["link"],
+        linkURL: URL(string: "https://developer.apple.com/documentation/photokit/bringing_photos_picker_to_your_swiftui_app")
+      ),
+      CollectionEntry(
+        title: "Long mixed-language thought",
+        detail: "今天先把 nook 的收集入口做得更像一段轻量对话：普通想法是我主动发出的消息，链接和图片像是被 nook 接住的外部素材。This should wrap naturally across several lines without changing the bubble alignment.",
+        source: .text,
+        tags: ["draft"]
+      )
+    ]
+  }
+}
+
+private enum NookPreviewImage {
+  static var data: Data? {
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 360, height: 240))
+    let image = renderer.image { context in
+      UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1).setFill()
+      context.fill(CGRect(x: 0, y: 0, width: 360, height: 240))
+
+      UIColor(red: 0.10, green: 0.52, blue: 0.34, alpha: 1).setFill()
+      context.cgContext.fillEllipse(in: CGRect(x: 44, y: 48, width: 92, height: 92))
+
+      UIColor(red: 0.15, green: 0.25, blue: 0.70, alpha: 1).setFill()
+      context.cgContext.fill(
+        CGRect(x: 150, y: 132, width: 164, height: 46)
+      )
+    }
+    return image.jpegData(compressionQuality: 0.86)
   }
 }
