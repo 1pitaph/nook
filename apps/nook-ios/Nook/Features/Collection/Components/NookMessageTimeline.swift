@@ -7,6 +7,9 @@ struct NookMessageTimeline: View {
   var bottomPadding: CGFloat
   var emptyHeight: CGFloat = 0
   var scrollToLatest = false
+  var selectionState = CollectionSelectionState()
+  var actionHandler: (CollectionEntryAction, CollectionEntry) -> Void = { _, _ in }
+  var selectionHandler: (CollectionEntry) -> Void = { _ in }
 
   private var displayEntries: [CollectionEntry] {
     Array(entries.reversed())
@@ -25,7 +28,10 @@ struct NookMessageTimeline: View {
               ForEach(displayEntries) { entry in
                 NookMessageRow(
                   entry: entry,
-                  availableWidth: geometry.size.width
+                  availableWidth: geometry.size.width,
+                  selectionState: selectionState,
+                  actionHandler: actionHandler,
+                  selectionHandler: selectionHandler
                 )
                 .id(entry.id)
               }
@@ -67,6 +73,9 @@ private enum NookMessageSide {
 private struct NookMessageRow: View {
   let entry: CollectionEntry
   var availableWidth: CGFloat
+  var selectionState: CollectionSelectionState
+  var actionHandler: (CollectionEntryAction, CollectionEntry) -> Void
+  var selectionHandler: (CollectionEntry) -> Void
 
   private var side: NookMessageSide {
     entry.source == .text ? .outgoing : .incoming
@@ -79,25 +88,71 @@ private struct NookMessageRow: View {
   }
 
   var body: some View {
-    HStack(alignment: .bottom, spacing: 0) {
+    HStack(alignment: .bottom, spacing: selectionState.isSelecting ? 10 : 0) {
       if side.isOutgoing {
         Spacer(minLength: 48)
       }
 
-      NookMessageBubble(entry: entry, side: side)
+      if selectionState.isSelecting && !side.isOutgoing {
+        selectionIndicator
+      }
+
+      interactiveBubble
         .frame(maxWidth: maxBubbleWidth, alignment: side.isOutgoing ? .trailing : .leading)
+
+      if selectionState.isSelecting && side.isOutgoing {
+        selectionIndicator
+      }
 
       if !side.isOutgoing {
         Spacer(minLength: 48)
       }
     }
     .frame(maxWidth: .infinity, alignment: side.isOutgoing ? .trailing : .leading)
+    .contentShape(Rectangle())
+    .onTapGesture {
+      if selectionState.isSelecting {
+        selectionHandler(entry)
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var interactiveBubble: some View {
+    if selectionState.isSelecting {
+      bareBubble
+    } else {
+      NookMessageContextMenu(
+        entry: entry,
+        actionHandler: actionHandler
+      ) {
+        bareBubble
+      }
+    }
+  }
+
+  private var bareBubble: some View {
+    NookMessageBubble(
+      entry: entry,
+      side: side,
+      isSelected: selectionState.contains(entry)
+    )
+  }
+
+  private var selectionIndicator: some View {
+    Image(systemName: selectionState.contains(entry) ? "checkmark.circle.fill" : "circle")
+      .font(.system(size: 22, weight: .semibold))
+      .symbolRenderingMode(.hierarchical)
+      .foregroundStyle(selectionState.contains(entry) ? NookTheme.note : NookTheme.tertiaryText)
+      .frame(width: 28, height: 36)
+      .accessibilityHidden(true)
   }
 }
 
 private struct NookMessageBubble: View {
   let entry: CollectionEntry
   let side: NookMessageSide
+  var isSelected = false
 
   private var bubbleShape: UnevenRoundedRectangle {
     UnevenRoundedRectangle(
@@ -137,9 +192,17 @@ private struct NookMessageBubble: View {
     .background(side.isOutgoing ? NookTheme.active : NookTheme.surface, in: bubbleShape)
     .overlay(
       bubbleShape
-        .stroke(side.isOutgoing ? Color.clear : NookTheme.hairline, lineWidth: 0.5)
+        .stroke(borderColor, lineWidth: isSelected ? 2 : 0.5)
     )
     .accessibilityElement(children: .combine)
+  }
+
+  private var borderColor: Color {
+    if isSelected {
+      return NookTheme.note
+    }
+
+    return side.isOutgoing ? Color.clear : NookTheme.hairline
   }
 }
 
@@ -256,21 +319,7 @@ private struct NookImageBubbleContent: View {
   }
 
   private var image: UIImage? {
-    if let imageData = entry.imageData,
-       let uiImage = UIImage(data: imageData) {
-      return uiImage
-    }
-
-    let imageURLs = [entry.thumbnailURL, entry.imageURL].compactMap(\.self)
-    for imageURL in imageURLs {
-      guard let data = try? Data(contentsOf: imageURL),
-            let uiImage = UIImage(data: data) else {
-        continue
-      }
-      return uiImage
-    }
-
-    return nil
+    CollectionEntryImageResolver.image(for: entry)
   }
 }
 

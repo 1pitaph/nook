@@ -15,6 +15,11 @@ struct NookInputBar: View {
       .onChange(of: model.draft) { _, newValue in
         handleDraftChange(newValue)
       }
+      .onChange(of: model.editingSession?.entryID) { _, entryID in
+        if entryID != nil {
+          isFocused = true
+        }
+      }
   }
 
   @ViewBuilder
@@ -38,16 +43,16 @@ struct NookInputBar: View {
 
   private var addSourceButton: some View {
     Button {
-      model.openAddMenu()
+      leadingButtonAction()
     } label: {
-      Image(systemName: "plus")
+      Image(systemName: leadingButtonSystemName)
         .font(.system(size: 20, weight: .semibold))
         .foregroundStyle(NookTheme.primaryText)
         .frame(width: controlSize, height: controlSize)
         .nookAdaptiveSurface(in: Circle(), isInteractive: true)
     }
     .buttonStyle(.plain)
-    .accessibilityLabel("Add source")
+    .accessibilityLabel(leadingButtonAccessibilityLabel)
   }
 
   private var textEntryField: some View {
@@ -118,7 +123,7 @@ struct NookInputBar: View {
     ) {
       trailingButtonAction()
     }
-    .disabled(model.mode == .sending)
+    .disabled(isTrailingButtonDisabled)
   }
 
   private var textHeight: CGFloat {
@@ -138,6 +143,9 @@ struct NookInputBar: View {
   }
 
   private var trailingButtonSystemName: String {
+    if model.isEditingEntry {
+      return "checkmark"
+    }
     if model.mode == .sending {
       return "hourglass"
     }
@@ -148,7 +156,19 @@ struct NookInputBar: View {
   }
 
   private var trailingButtonAccessibilityLabel: String {
-    shouldDismissKeyboard ? "Dismiss keyboard" : "Send collection item"
+    if model.isEditingEntry {
+      return "Save changes"
+    }
+
+    return shouldDismissKeyboard ? "Dismiss keyboard" : "Send collection item"
+  }
+
+  private var leadingButtonSystemName: String {
+    model.isEditingEntry ? "xmark" : "plus"
+  }
+
+  private var leadingButtonAccessibilityLabel: String {
+    model.isEditingEntry ? "Cancel editing" : "Add source"
   }
 
   private var hasDraftContent: Bool {
@@ -157,6 +177,14 @@ struct NookInputBar: View {
 
   private var shouldDismissKeyboard: Bool {
     isFocused && !hasDraftContent
+  }
+
+  private var isTrailingButtonDisabled: Bool {
+    if model.isEditingEntry {
+      return !model.canSaveEditingDraft
+    }
+
+    return model.mode == .sending
   }
 
   private func handleDraftChange(_ newValue: String) {
@@ -174,10 +202,30 @@ struct NookInputBar: View {
   }
 
   private func sendSubmittedDraft() {
-    model.sendDraft()
+    if model.isEditingEntry {
+      model.saveEditingDraft()
+    } else {
+      model.sendDraft()
+    }
+  }
+
+  private func leadingButtonAction() {
+    if model.isEditingEntry {
+      model.cancelEditing()
+      isFocused = false
+      return
+    }
+
+    model.openAddMenu()
   }
 
   private func trailingButtonAction() {
+    if model.isEditingEntry {
+      model.saveEditingDraft()
+      isFocused = false
+      return
+    }
+
     if shouldDismissKeyboard {
       isFocused = false
       return

@@ -33,6 +33,21 @@ final class PersistedCollectionEntry {
     imageContentType = entry.imageContentType
   }
 
+  func update(with entry: CollectionEntry) {
+    title = entry.title
+    detail = entry.detail
+    sourceRawValue = entry.source.rawValue
+    createdAt = entry.createdAt
+    tags = entry.tags
+    linkURL = entry.linkURL
+    imageFileName = entry.imageFileName
+    thumbnailFileName = entry.thumbnailFileName
+    imagePixelWidth = entry.imagePixelWidth
+    imagePixelHeight = entry.imagePixelHeight
+    imageByteCount = entry.imageByteCount
+    imageContentType = entry.imageContentType
+  }
+
   func entry(attachmentStore: CollectionAttachmentStore) -> CollectionEntry {
     let attachment = attachmentStore.attachment(
       imageFileName: imageFileName,

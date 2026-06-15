@@ -20,6 +20,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save images from nook to your Photos library.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Sora-Variable.ttf</string>

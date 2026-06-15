@@ -38,8 +38,36 @@ private struct NookHomeContent: View {
       .sheet(item: $model.activeSheet) { sheet in
         sheetContent(for: sheet)
       }
+      .sheet(item: $model.activeShareItem) { shareItem in
+        NookActivityView(item: shareItem)
+      }
+      .confirmationDialog(
+        model.pendingDeletion?.title ?? "Delete Capture?",
+        isPresented: deletionDialogBinding,
+        titleVisibility: .visible
+      ) {
+        Button("Delete", role: .destructive) {
+          model.confirmPendingDeletion()
+        }
+
+        Button("Cancel", role: .cancel) {
+          model.pendingDeletion = nil
+        }
+      } message: {
+        Text(model.pendingDeletion?.message ?? "This capture will be removed from nook.")
+      }
       .font(NookFont.app(17))
       .preferredColorScheme(.light)
+  }
+
+  private var deletionDialogBinding: Binding<Bool> {
+    Binding {
+      model.pendingDeletion != nil
+    } set: { isPresented in
+      if !isPresented {
+        model.pendingDeletion = nil
+      }
+    }
   }
 
   @ViewBuilder
@@ -91,7 +119,11 @@ struct NookHomeScaffold: View {
       }
     }
     .safeAreaInset(edge: .bottom) {
-      NookBottomDock(model: model)
+      if model.selectionState.isSelecting {
+        NookSelectionToolbar(model: model)
+      } else {
+        NookBottomDock(model: model)
+      }
     }
   }
 }
@@ -141,10 +173,25 @@ private struct NookContentCanvas: View {
     NookMessageTimeline(
       entries: model.visibleEntries,
       topPadding: 24,
-      bottomPadding: model.shouldShowSuggestions ? 196 : 24,
+      bottomPadding: bottomPadding,
       emptyHeight: 420,
-      scrollToLatest: true
+      scrollToLatest: true,
+      selectionState: model.selectionState,
+      actionHandler: { action, entry in
+        model.perform(action, on: entry)
+      },
+      selectionHandler: { entry in
+        model.toggleSelection(for: entry)
+      }
     )
+  }
+
+  private var bottomPadding: CGFloat {
+    if model.selectionState.isSelecting {
+      return 96
+    }
+
+    return model.shouldShowSuggestions ? 196 : 24
   }
 }
 

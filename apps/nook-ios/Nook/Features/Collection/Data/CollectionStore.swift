@@ -29,6 +29,42 @@ struct CollectionStore {
     return entry
   }
 
+  func update(_ entry: CollectionEntry) throws -> CollectionEntry {
+    guard let persistedEntry = try persistedEntry(for: entry.id) else {
+      return try save(entry)
+    }
+
+    persistedEntry.update(with: entry)
+    try modelContext.save()
+    return entry
+  }
+
+  func delete(id: UUID) throws {
+    try delete(ids: [id])
+  }
+
+  func delete(ids: Set<UUID>) throws {
+    var attachmentsToDelete: [CollectionImageAttachment] = []
+
+    for id in ids {
+      guard let persistedEntry = try persistedEntry(for: id) else {
+        continue
+      }
+
+      if let attachment = attachment(for: persistedEntry) {
+        attachmentsToDelete.append(attachment)
+      }
+
+      modelContext.delete(persistedEntry)
+    }
+
+    try modelContext.save()
+
+    for attachment in attachmentsToDelete {
+      attachmentStore.delete(attachment)
+    }
+  }
+
   func saveImage(
     data: Data,
     entryFactory: CollectionEntryFactory
@@ -44,5 +80,26 @@ struct CollectionStore {
       attachmentStore.delete(attachment)
       throw error
     }
+  }
+
+  private func persistedEntry(for id: UUID) throws -> PersistedCollectionEntry? {
+    var descriptor = FetchDescriptor<PersistedCollectionEntry>(
+      predicate: #Predicate<PersistedCollectionEntry> { entry in
+        entry.id == id
+      }
+    )
+    descriptor.fetchLimit = 1
+    return try modelContext.fetch(descriptor).first
+  }
+
+  private func attachment(for entry: PersistedCollectionEntry) -> CollectionImageAttachment? {
+    attachmentStore.attachment(
+      imageFileName: entry.imageFileName,
+      thumbnailFileName: entry.thumbnailFileName,
+      pixelWidth: entry.imagePixelWidth,
+      pixelHeight: entry.imagePixelHeight,
+      byteCount: entry.imageByteCount,
+      contentType: entry.imageContentType
+    )
   }
 }

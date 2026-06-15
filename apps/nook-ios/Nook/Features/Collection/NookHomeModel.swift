@@ -16,12 +16,16 @@ final class NookHomeModel {
   var suggestions: [NookSuggestion]
   var mode: ComposerMode = .idle
   var activeSheet: NookSheet?
+  var activeShareItem: CollectionShareItem?
+  var pendingDeletion: CollectionDeletionRequest?
   var activeCategoryFilter: CollectionCategory?
   var selectedSource: CollectionEntry.Source = .text
+  var selectionState = CollectionSelectionState()
+  var editingSession: CollectionEntryEditSession?
 
-  private let entryFactory: CollectionEntryFactory
+  let entryFactory: CollectionEntryFactory
   private let categorizer: CollectionCategorizer
-  private let collectionStore: CollectionStore?
+  let collectionStore: CollectionStore?
 
   init(
     entries: [CollectionEntry] = [],
@@ -38,11 +42,26 @@ final class NookHomeModel {
   }
 
   var canSend: Bool {
-    !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && mode != .sending
+    editingSession == nil && hasDraftContent && mode != .sending
+  }
+
+  var canSaveEditingDraft: Bool {
+    editingSession != nil && hasDraftContent && mode != .sending
+  }
+
+  var hasSelectedEntries: Bool {
+    selectionState.selectedCount > 0
+  }
+
+  var isEditingEntry: Bool {
+    editingSession != nil
   }
 
   var shouldShowSuggestions: Bool {
-    entries.isEmpty && mode != .recording && draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    entries.isEmpty
+      && mode != .recording
+      && editingSession == nil
+      && !hasDraftContent
   }
 
   var visibleEntries: [CollectionEntry] {
@@ -68,18 +87,27 @@ final class NookHomeModel {
   }
 
   func blurDraft() {
-    if mode == .editing && draft.isEmpty {
+    if mode == .editing && draft.isEmpty && editingSession == nil {
       mode = .idle
     }
   }
 
   func apply(_ suggestion: NookSuggestion) {
+    guard editingSession == nil else {
+      return
+    }
+
     selectedSource = suggestion.source
     draft = suggestion.prompt
     mode = .editing
   }
 
   func sendDraft() {
+    if editingSession != nil {
+      saveEditingDraft()
+      return
+    }
+
     guard let entry = entryFactory.entry(forDraft: draft) else {
       return
     }
@@ -133,6 +161,10 @@ final class NookHomeModel {
   }
 
   func add(source: CollectionEntry.Source) {
+    guard editingSession == nil else {
+      return
+    }
+
     selectedSource = source
 
     switch source {
@@ -152,6 +184,10 @@ final class NookHomeModel {
   }
 
   func toggleRecording() {
+    guard editingSession == nil else {
+      return
+    }
+
     if mode == .recording {
       mode = .editing
       draft = "Voice note transcript: "
