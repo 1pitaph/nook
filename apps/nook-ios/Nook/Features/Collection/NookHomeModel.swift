@@ -18,12 +18,19 @@ final class NookHomeModel {
   var activeSheet: NookSheet?
   var selectedSource: CollectionEntry.Source = .text
 
+  private let entryFactory: CollectionEntryFactory
+  private let categorizer: CollectionCategorizer
+
   init(
     entries: [CollectionEntry] = [],
-    suggestions: [NookSuggestion] = NookSuggestion.defaults
+    suggestions: [NookSuggestion] = NookSuggestionCatalog.defaults,
+    entryFactory: CollectionEntryFactory = CollectionEntryFactory(),
+    categorizer: CollectionCategorizer = CollectionCategorizer()
   ) {
     self.entries = entries
     self.suggestions = suggestions
+    self.entryFactory = entryFactory
+    self.categorizer = categorizer
   }
 
   var canSend: Bool {
@@ -35,13 +42,11 @@ final class NookHomeModel {
   }
 
   func count(for category: CollectionCategory) -> Int {
-    entries(for: category).count
+    categorizer.count(for: category, in: entries)
   }
 
   func entries(for category: CollectionCategory) -> [CollectionEntry] {
-    entries.filter { entry in
-      Self.entry(entry, matches: category)
-    }
+    categorizer.entries(for: category, in: entries)
   }
 
   func focusDraft() {
@@ -63,22 +68,11 @@ final class NookHomeModel {
   }
 
   func sendDraft() {
-    let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !content.isEmpty else {
+    guard let entry = entryFactory.entry(forDraft: draft) else {
       return
     }
 
     mode = .sending
-    let linkURL = Self.firstLink(in: content)
-    let finalSource: CollectionEntry.Source = linkURL == nil ? .text : .link
-    let title = Self.title(for: content, source: finalSource, linkURL: linkURL)
-    let entry = CollectionEntry(
-      title: title,
-      detail: content,
-      source: finalSource,
-      tags: Self.tags(for: content, source: finalSource, linkURL: linkURL),
-      linkURL: linkURL
-    )
     entries.insert(entry, at: 0)
     draft = ""
     selectedSource = .text
@@ -88,14 +82,7 @@ final class NookHomeModel {
 
   func addImage(data: Data) {
     mode = .sending
-    let entry = CollectionEntry(
-      title: "Photo from library",
-      detail: "Image selected from Photos.",
-      source: .image,
-      tags: Self.tags(for: "", source: .image, linkURL: nil),
-      imageData: data
-    )
-    entries.insert(entry, at: 0)
+    entries.insert(entryFactory.imageEntry(data: data), at: 0)
     selectedSource = .text
     mode = .idle
     rotateSuggestions()
@@ -107,6 +94,7 @@ final class NookHomeModel {
 
   func add(source: CollectionEntry.Source) {
     selectedSource = source
+
     switch source {
     case .text:
       draft = ""
@@ -145,187 +133,8 @@ final class NookHomeModel {
     guard let first = suggestions.first else {
       return
     }
+
     suggestions.removeFirst()
     suggestions.append(first)
-  }
-
-  private static func title(for content: String) -> String {
-    let cleaned = content.replacingOccurrences(of: "\n", with: " ")
-    if cleaned.count <= 34 {
-      return cleaned
-    }
-    return String(cleaned.prefix(31)) + "..."
-  }
-
-  private static func title(
-    for content: String,
-    source: CollectionEntry.Source,
-    linkURL: URL?
-  ) -> String {
-    if source == .link, let host = linkURL?.host {
-      return host.replacingOccurrences(of: "www.", with: "")
-    }
-    return title(for: content)
-  }
-
-  private static func tags(
-    for content: String,
-    source: CollectionEntry.Source,
-    linkURL: URL?
-  ) -> [String] {
-    var tags = [source.label.lowercased()]
-    if content.localizedCaseInsensitiveContains("idea") {
-      tags.append("idea")
-    }
-    if source == .link && linkURL != nil {
-      tags.append("link")
-    }
-    if source == .image {
-      tags.append("photo")
-    }
-    return Array(Set(tags)).sorted()
-  }
-
-  private static func firstLink(in content: String) -> URL? {
-    guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
-      return nil
-    }
-
-    let nsContent = content as NSString
-    let range = NSRange(location: 0, length: nsContent.length)
-    let matches = detector.matches(in: content, options: [], range: range)
-
-    for match in matches {
-      guard let url = match.url,
-            let normalizedURL = normalizedLink(url) else {
-        continue
-      }
-      return normalizedURL
-    }
-    return nil
-  }
-
-  private static func normalizedLink(_ url: URL) -> URL? {
-    let trailingPunctuation = CharacterSet(charactersIn: ".,;:!?)]}，。！？、；：）】」』")
-    var rawValue = url.absoluteString.trimmingCharacters(in: trailingPunctuation)
-
-    if rawValue.range(of: "www.", options: [.anchored, .caseInsensitive]) != nil {
-      rawValue = "https://\(rawValue)"
-    }
-
-    guard let normalizedURL = URL(string: rawValue),
-          let scheme = normalizedURL.scheme?.lowercased(),
-          scheme == "http" || scheme == "https" else {
-      return nil
-    }
-    return normalizedURL
-  }
-
-  private static func entry(_ entry: CollectionEntry, matches category: CollectionCategory) -> Bool {
-    let searchableText = ([entry.title, entry.detail] + entry.tags)
-      .joined(separator: " ")
-      .lowercased()
-
-    switch category {
-    case .pin:
-      return containsAny(["pin", "pinned", "save", "saved"], in: searchableText)
-    case .todo:
-      return containsAny(["todo", "to-do", "task", "checklist", "check list", "- [ ]"], in: searchableText)
-    case .highlight:
-      return containsAny(["highlight", "highlights", "important", "key point", "keypoint"], in: searchableText)
-    case .quotes:
-      return containsAny(["quote", "quotes"], in: searchableText)
-        || searchableText.contains("\"")
-        || searchableText.contains("“")
-        || searchableText.contains("”")
-    case .photos:
-      return entry.source == .image
-    case .audio:
-      return entry.source == .voice
-    case .links:
-      return entry.source == .link
-        || entry.linkURL != nil
-        || containsAny(["http://", "https://", "www."], in: searchableText)
-    case .remind:
-      return containsAny(["remind", "reminder", "tomorrow", "later", "due", "follow up", "follow-up"], in: searchableText)
-    }
-  }
-
-  private static func containsAny(_ needles: [String], in haystack: String) -> Bool {
-    needles.contains { haystack.contains($0) }
-  }
-}
-
-enum CollectionCategory: String, CaseIterable, Identifiable, Hashable {
-  case pin
-  case todo
-  case highlight
-  case quotes
-  case photos
-  case audio
-  case links
-  case remind
-
-  var id: String {
-    rawValue
-  }
-
-  var label: String {
-    switch self {
-    case .pin:
-      "Pin"
-    case .todo:
-      "To-Do"
-    case .highlight:
-      "Highlight"
-    case .quotes:
-      "Quotes"
-    case .photos:
-      "Photos"
-    case .audio:
-      "Audio"
-    case .links:
-      "Links"
-    case .remind:
-      "Remind"
-    }
-  }
-
-  var symbolName: String {
-    switch self {
-    case .pin:
-      "pin"
-    case .todo:
-      "checklist"
-    case .highlight:
-      "highlighter"
-    case .quotes:
-      "quote.opening"
-    case .photos:
-      "photo"
-    case .audio:
-      "waveform"
-    case .links:
-      "link"
-    case .remind:
-      "bell"
-    }
-  }
-}
-
-enum NookSheet: Identifiable, Equatable {
-  case add
-  case categories
-  case capture(String)
-
-  var id: String {
-    switch self {
-    case .add:
-      "add"
-    case .categories:
-      "categories"
-    case let .capture(message):
-      "capture-\(message)"
-    }
   }
 }

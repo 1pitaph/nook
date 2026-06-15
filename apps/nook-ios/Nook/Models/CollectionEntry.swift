@@ -68,26 +68,3 @@ struct CollectionEntry: Identifiable, Equatable {
     self.imageData = imageData
   }
 }
-
-extension CollectionEntry {
-  static let samples: [CollectionEntry] = [
-    CollectionEntry(
-      title: "Inbox structure for nook",
-      detail: "Keep capture, summarize, and archive as the first three gestures.",
-      tags: ["product", "draft"]
-    ),
-    CollectionEntry(
-      title: "Article to read later",
-      detail: "https://example.com/chat-shaped-collection",
-      source: .link,
-      tags: ["link", "reading"],
-      linkURL: URL(string: "https://example.com/chat-shaped-collection")
-    ),
-    CollectionEntry(
-      title: "Photo from library",
-      detail: "Image selected from Photos.",
-      source: .image,
-      tags: ["image", "photo"]
-    )
-  ]
-}

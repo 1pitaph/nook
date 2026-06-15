@@ -1,0 +1,114 @@
+import SwiftUI
+import UIKit
+
+#if DEBUG
+#Preview("Empty") {
+  NookHomeView()
+}
+
+#Preview("With message bubbles") {
+  NookPreviewHost(entries: CollectionEntry.messageBubbleSamples)
+}
+
+#Preview("Long content") {
+  NookPreviewHost(entries: CollectionEntry.longMessageSamples)
+}
+
+private struct NookPreviewHost: View {
+  @State private var model: NookHomeModel
+
+  init(entries: [CollectionEntry]) {
+    _model = State(initialValue: NookHomeModel(entries: entries))
+  }
+
+  var body: some View {
+    NookHomeScaffold(model: model)
+      .preferredColorScheme(.light)
+  }
+}
+
+extension CollectionEntry {
+  static let samples: [CollectionEntry] = [
+    CollectionEntry(
+      title: "Inbox structure for nook",
+      detail: "Keep capture, summarize, and archive as the first three gestures.",
+      tags: ["product", "draft"]
+    ),
+    CollectionEntry(
+      title: "Article to read later",
+      detail: "https://example.com/chat-shaped-collection",
+      source: .link,
+      tags: ["link", "reading"],
+      linkURL: URL(string: "https://example.com/chat-shaped-collection")
+    ),
+    CollectionEntry(
+      title: "Photo from library",
+      detail: "Image selected from Photos.",
+      source: .image,
+      tags: ["image", "photo"]
+    )
+  ]
+
+  static var messageBubbleSamples: [CollectionEntry] {
+    [
+      CollectionEntry(
+        title: "Photo from library",
+        detail: "Image selected from Photos.",
+        source: .image,
+        tags: ["image", "photo"],
+        imageData: NookPreviewImage.data
+      ),
+      CollectionEntry(
+        title: "example.com",
+        detail: "https://example.com/chat-shaped-collection",
+        source: .link,
+        tags: ["link", "reading"],
+        linkURL: URL(string: "https://example.com/chat-shaped-collection")
+      ),
+      CollectionEntry(
+        title: "Inbox structure for nook",
+        detail: "Keep capture, summarize, and archive as the first three gestures.",
+        source: .text,
+        tags: ["draft", "product"]
+      )
+    ]
+  }
+
+  static var longMessageSamples: [CollectionEntry] {
+    [
+      CollectionEntry(
+        title: "developer.apple.com",
+        detail: "这是一条很长的链接收藏，前面有一些说明文字，后面跟着一个很长的 URL，用来检查链接气泡在小屏幕上不会把布局撑开：https://developer.apple.com/documentation/photokit/bringing_photos_picker_to_your_swiftui_app",
+        source: .link,
+        tags: ["link"],
+        linkURL: URL(string: "https://developer.apple.com/documentation/photokit/bringing_photos_picker_to_your_swiftui_app")
+      ),
+      CollectionEntry(
+        title: "Long mixed-language thought",
+        detail: "今天先把 nook 的收集入口做得更像一段轻量对话：普通想法是我主动发出的消息，链接和图片像是被 nook 接住的外部素材。This should wrap naturally across several lines without changing the bubble alignment.",
+        source: .text,
+        tags: ["draft"]
+      )
+    ]
+  }
+}
+
+private enum NookPreviewImage {
+  static var data: Data? {
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 360, height: 240))
+    let image = renderer.image { context in
+      UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1).setFill()
+      context.fill(CGRect(x: 0, y: 0, width: 360, height: 240))
+
+      UIColor(red: 0.10, green: 0.52, blue: 0.34, alpha: 1).setFill()
+      context.cgContext.fillEllipse(in: CGRect(x: 44, y: 48, width: 92, height: 92))
+
+      UIColor(red: 0.15, green: 0.25, blue: 0.70, alpha: 1).setFill()
+      context.cgContext.fill(
+        CGRect(x: 150, y: 132, width: 164, height: 46)
+      )
+    }
+    return image.jpegData(compressionQuality: 0.86)
+  }
+}
+#endif
