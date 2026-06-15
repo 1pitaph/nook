@@ -1,0 +1,11 @@
+{
+  "name": "nook",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nook monorepo.",
+  "packageManager": "pnpm@11.6.0",
+  "scripts": {
+    "ios:generate": "xcodegen generate --spec apps/nook-ios/project.yml",
+    "ios:build": "xcodebuild -project apps/nook-ios/Nook.xcodeproj -scheme Nook -destination 'generic/platform=iOS Simulator' build"
+  }
+}
