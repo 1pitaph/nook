@@ -34,6 +34,20 @@ struct ShadowStyle {
   let y: CGFloat
 }
 
+enum NookFont {
+  private static let familyName = "Sora-Regular"
+
+  static func app(_ size: CGFloat, weight: Font.Weight? = nil) -> Font {
+    let font = Font.custom(familyName, size: size)
+
+    if let weight {
+      return font.weight(weight)
+    }
+
+    return font
+  }
+}
+
 extension View {
   func nookShadow(_ style: ShadowStyle = NookTheme.softShadow) -> some View {
     shadow(color: style.color, radius: style.radius, x: style.x, y: style.y)

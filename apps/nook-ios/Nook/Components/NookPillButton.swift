@@ -12,7 +12,7 @@ struct NookPillButton: View {
           .font(.system(size: 14, weight: .semibold))
 
         Text(title)
-          .font(.system(size: 15, weight: .semibold))
+          .font(NookFont.app(15, weight: .semibold))
       }
       .foregroundStyle(NookTheme.primaryText)
       .padding(.horizontal, 16)

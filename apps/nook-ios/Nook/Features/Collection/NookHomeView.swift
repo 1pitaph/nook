@@ -39,6 +39,7 @@ struct NookHomeView: View {
           .presentationDragIndicator(.visible)
       }
     }
+    .font(NookFont.app(17))
     .preferredColorScheme(.light)
   }
 }
@@ -49,7 +50,7 @@ private struct NookTopBar: View {
   var body: some View {
     HStack {
       Text("nook")
-        .font(.system(size: 31, weight: .bold, design: .rounded))
+        .font(NookFont.app(31, weight: .bold))
         .foregroundStyle(NookTheme.primaryText)
         .accessibilityAddTraits(.isHeader)
 
@@ -261,7 +262,7 @@ private struct NookRichBubbleContent<Content: View>: View {
             .lineLimit(1)
 
           Text(entry.source.label)
-            .font(.system(size: 13, weight: .medium))
+            .font(NookFont.app(13, weight: .medium))
             .foregroundStyle(NookTheme.secondaryText)
         }
       }
@@ -336,7 +337,7 @@ private struct NookImageBubbleContent: View {
             .font(.system(size: 28, weight: .semibold))
 
           Text("Image preview unavailable")
-            .font(.system(size: 14, weight: .semibold))
+            .font(NookFont.app(14, weight: .semibold))
         }
         .foregroundStyle(NookTheme.secondaryText)
       }
@@ -353,7 +354,7 @@ private struct NookTagRow: View {
       HStack(spacing: 8) {
         ForEach(tags, id: \.self) { tag in
           Text(tag)
-            .font(.system(size: 12, weight: .semibold))
+            .font(NookFont.app(12, weight: .semibold))
             .foregroundStyle(NookTheme.primaryText.opacity(0.72))
             .padding(.horizontal, 9)
             .frame(height: 24)
@@ -459,13 +460,13 @@ private struct NookSuggestionCard: View {
     Button(action: action) {
       VStack(alignment: .leading, spacing: 4) {
         Text(suggestion.title)
-          .font(.system(size: 17, weight: .bold))
+          .font(NookFont.app(17, weight: .bold))
           .foregroundStyle(NookTheme.primaryText)
           .lineLimit(1)
           .minimumScaleFactor(0.76)
 
         Text(suggestion.subtitle)
-          .font(.system(size: 16, weight: .regular))
+          .font(NookFont.app(16))
           .foregroundStyle(NookTheme.secondaryText)
           .lineLimit(1)
           .minimumScaleFactor(0.76)
@@ -531,7 +532,7 @@ private struct NookInputBar: View {
         ZStack(alignment: textAlignment) {
           if model.draft.isEmpty {
             Text("Ask nook")
-              .font(textFont)
+              .font(NookFont.app(20))
               .foregroundStyle(NookTheme.tertiaryText)
               .frame(maxWidth: .infinity, alignment: .leading)
               .allowsHitTesting(false)
@@ -668,7 +669,7 @@ private struct NookAddMenu: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
       Text("Add to nook")
-        .font(.system(size: 25, weight: .bold, design: .rounded))
+        .font(NookFont.app(25, weight: .bold))
         .foregroundStyle(NookTheme.primaryText)
 
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 12)], spacing: 12) {
@@ -732,7 +733,7 @@ private struct NookAddSourceTile: View {
         .background(Color.black.opacity(0.055), in: Circle())
 
       Text(source.label)
-        .font(.system(size: 14, weight: .semibold))
+        .font(NookFont.app(14, weight: .semibold))
     }
     .foregroundStyle(NookTheme.primaryText)
     .frame(maxWidth: .infinity)
@@ -849,11 +850,11 @@ private struct NookCategoryHeader: View {
     HStack(alignment: .center) {
       VStack(alignment: .leading, spacing: 4) {
         Text("Collection")
-          .font(.system(size: 31, weight: .bold, design: .rounded))
+          .font(NookFont.app(31, weight: .bold))
           .foregroundStyle(NookTheme.primaryText)
 
         Text(totalLabel)
-          .font(.system(size: 15, weight: .medium))
+          .font(NookFont.app(15, weight: .medium))
           .foregroundStyle(NookTheme.secondaryText)
       }
 
@@ -881,30 +882,31 @@ private struct NookCategoryTile: View {
   let count: Int
 
   var body: some View {
-    HStack(alignment: .top, spacing: 12) {
-      VStack(alignment: .leading, spacing: 12) {
+    ZStack(alignment: .topLeading) {
+      HStack(alignment: .top, spacing: 12) {
         Image(systemName: category.symbolName)
-          .font(.system(size: 18, weight: .semibold))
+          .font(.system(size: 18))
           .foregroundStyle(NookTheme.primaryText)
           .frame(width: 34, height: 34)
-          .background(Color.black.opacity(0.055), in: Circle())
 
-        Text(category.label)
-          .font(.system(size: 22, weight: .bold))
+        Spacer(minLength: 4)
+
+        Text("\(count)")
+          .font(NookFont.app(38))
           .foregroundStyle(NookTheme.primaryText)
+          .monospacedDigit()
           .lineLimit(1)
-          .minimumScaleFactor(0.72)
+          .minimumScaleFactor(0.7)
       }
 
-      Spacer(minLength: 4)
-
-      Text("\(count)")
-        .font(.system(size: 38, weight: .bold))
-        .foregroundStyle(NookTheme.primaryText)
-        .monospacedDigit()
+      Text(category.label)
+        .font(NookFont.app(18))
+        .foregroundStyle(NookTheme.secondaryText)
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.72)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
     }
+    .frame(maxWidth: .infinity, minHeight: 86, alignment: .topLeading)
     .padding(16)
     .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
     .background(NookTheme.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -958,11 +960,11 @@ private struct NookCategoryEmptyState: View {
         .background(NookTheme.surface, in: Circle())
 
       Text("No \(category.label) yet")
-        .font(.system(size: 21, weight: .bold, design: .rounded))
+        .font(NookFont.app(21, weight: .bold))
         .foregroundStyle(NookTheme.primaryText)
 
       Text("New captures will appear here when they match this category.")
-        .font(.system(size: 16, weight: .medium))
+        .font(NookFont.app(16, weight: .medium))
         .foregroundStyle(NookTheme.secondaryText)
         .multilineTextAlignment(.center)
         .frame(maxWidth: 280)
@@ -982,7 +984,7 @@ private struct NookCollectionSettingsView: View {
       NookSheetNavigationHeader(title: "Settings", goBack: goBack)
 
       Form {
-        Section("Capture") {
+        Section {
           Toggle(isOn: $hapticsEnabled) {
             NookSettingsLabel(
               title: "Haptics",
@@ -1006,22 +1008,40 @@ private struct NookCollectionSettingsView: View {
               systemName: "link"
             )
           }
+        } header: {
+          Text("Capture")
+            .font(NookFont.app(13, weight: .semibold))
         }
 
-        Section("Workspace") {
+        Section {
           LabeledContent {
             Text("Inbox")
+              .font(NookFont.app(15))
               .foregroundStyle(NookTheme.secondaryText)
           } label: {
-            Label("Default collection", systemImage: "tray")
+            Label {
+              Text("Default collection")
+                .font(NookFont.app(17))
+            } icon: {
+              Image(systemName: "tray")
+            }
           }
 
           LabeledContent {
             Text("Local prototype")
+              .font(NookFont.app(15))
               .foregroundStyle(NookTheme.secondaryText)
           } label: {
-            Label("Storage", systemImage: "externaldrive")
+            Label {
+              Text("Storage")
+                .font(NookFont.app(17))
+            } icon: {
+              Image(systemName: "externaldrive")
+            }
           }
+        } header: {
+          Text("Workspace")
+            .font(NookFont.app(13, weight: .semibold))
         }
       }
       .scrollContentBackground(.hidden)
@@ -1039,7 +1059,7 @@ private struct NookSheetNavigationHeader: View {
   var body: some View {
     ZStack {
       Text(title)
-        .font(.system(size: 17, weight: .semibold))
+        .font(NookFont.app(17, weight: .semibold))
         .foregroundStyle(NookTheme.primaryText)
         .lineLimit(1)
 
@@ -1070,9 +1090,10 @@ private struct NookSettingsLabel: View {
     Label {
       VStack(alignment: .leading, spacing: 3) {
         Text(title)
+          .font(NookFont.app(17))
 
         Text(subtitle)
-          .font(.caption)
+          .font(NookFont.app(12))
           .foregroundStyle(NookTheme.secondaryText)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -1094,7 +1115,7 @@ private struct NookCapturePlaceholder: View {
         .foregroundStyle(NookTheme.success)
 
       Text(message)
-        .font(.system(size: 18, weight: .semibold))
+        .font(NookFont.app(18, weight: .semibold))
         .foregroundStyle(NookTheme.primaryText)
         .multilineTextAlignment(.center)
         .padding(.horizontal)
@@ -1102,7 +1123,7 @@ private struct NookCapturePlaceholder: View {
       Button("Done") {
         dismiss()
       }
-      .font(.system(size: 17, weight: .semibold))
+      .font(NookFont.app(17, weight: .semibold))
       .buttonStyle(.borderedProminent)
       .tint(.black)
     }

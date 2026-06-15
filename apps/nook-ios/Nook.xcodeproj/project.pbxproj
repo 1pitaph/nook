@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01A310477970B9975BC569D2 /* Sora-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9B949C7425A1078E73A01DC7 /* Sora-Variable.ttf */; };
 		251F4218B86AE24B481037E1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 01D6BE0E61F0F81115B33981 /* AppIcon.icon */; };
 		25490E0A8E5492258B4E85AE /* CollectionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F91D014A1FEE05A98D0DCF3 /* CollectionEntry.swift */; };
 		2BB3602A4B19FC4C05F0C451 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 170212C508F45D65AB1B9513 /* Assets.xcassets */; };
@@ -28,17 +29,29 @@
 		6AF31C476DBDFF1170647A72 /* Nook.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Nook.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7EB14FC7F9C70350211CEEAE /* NookHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookHomeView.swift; sourceTree = "<group>"; };
 		812F326CE2E54698858EE0B7 /* NookTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookTheme.swift; sourceTree = "<group>"; };
+		9B949C7425A1078E73A01DC7 /* Sora-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Sora-Variable.ttf"; sourceTree = "<group>"; };
 		ACF1E035D557D1DE4DB373DA /* NookPillButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookPillButton.swift; sourceTree = "<group>"; };
+		C10C52E64E22A80179251010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D04837C7A0A47EA7F085B624 /* NookHomeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookHomeModel.swift; sourceTree = "<group>"; };
 		D0C616445B6A7FD9489D50F5 /* NookSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookSuggestion.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		14C874CD16D32415FE6FF399 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				9B949C7425A1078E73A01DC7 /* Sora-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		3B0328E73DB78F0B95AD9373 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				01D6BE0E61F0F81115B33981 /* AppIcon.icon */,
 				170212C508F45D65AB1B9513 /* Assets.xcassets */,
+				C10C52E64E22A80179251010 /* Info.plist */,
+				14C874CD16D32415FE6FF399 /* Fonts */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -185,6 +198,7 @@
 			files = (
 				251F4218B86AE24B481037E1 /* AppIcon.icon in Resources */,
 				2BB3602A4B19FC4C05F0C451 /* Assets.xcassets in Resources */,
+				01A310477970B9975BC569D2 /* Sora-Variable.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -341,13 +355,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = nook;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_FILE = Nook/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -366,13 +374,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = nook;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_FILE = Nook/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
