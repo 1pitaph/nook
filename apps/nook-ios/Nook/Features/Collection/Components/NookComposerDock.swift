@@ -11,7 +11,7 @@ struct NookBottomDock: View {
   var body: some View {
     let showsSuggestions = model.shouldShowSuggestions
 
-    VStack(spacing: 14) {
+    VStack(spacing: showsSuggestions ? 14 : 0) {
       NookSuggestionRow(model: model)
         .frame(height: showsSuggestions ? 88 : 0)
         .opacity(showsSuggestions ? 1 : 0)

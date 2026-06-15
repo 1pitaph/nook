@@ -100,7 +100,7 @@ private struct NookContentCanvas: View {
     NookMessageTimeline(
       entries: model.visibleEntries,
       topPadding: 24,
-      bottomPadding: model.shouldShowSuggestions ? 196 : 116,
+      bottomPadding: model.shouldShowSuggestions ? 196 : 24,
       emptyHeight: 420,
       scrollToLatest: true
     )
