@@ -31,7 +31,7 @@ struct NookHomeView: View {
           .presentationDragIndicator(.visible)
       case .categories:
         NookCollectionCategoriesView(model: model)
-          .presentationDetents([.height(620), .large])
+          .presentationDetents([.large])
           .presentationDragIndicator(.visible)
       case let .capture(message):
         NookCapturePlaceholder(message: message)
@@ -58,7 +58,7 @@ private struct NookTopBar: View {
       NookIconButton(
         systemName: "square.grid.2x2",
         accessibilityLabel: "Open collection categories",
-        size: 52
+        size: 45
       ) {
         model.openCollectionCategories()
       }
@@ -367,6 +367,10 @@ private struct NookTagRow: View {
 private struct NookBottomDock: View {
   var model: NookHomeModel
 
+  @State private var isKeyboardVisible = false
+
+  private let keyboardGap: CGFloat = 10
+
   var body: some View {
     let showsSuggestions = model.shouldShowSuggestions
 
@@ -382,7 +386,7 @@ private struct NookBottomDock: View {
     }
     .padding(.horizontal, 24)
     .padding(.top, 8)
-    .padding(.bottom, 12)
+    .padding(.bottom, isKeyboardVisible ? keyboardGap : 0)
     .background(
       LinearGradient(
         colors: [
@@ -396,6 +400,27 @@ private struct NookBottomDock: View {
       .ignoresSafeArea()
     )
     .animation(.snappy(duration: 0.28), value: showsSuggestions)
+    .animation(.snappy(duration: 0.22), value: isKeyboardVisible)
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
+      isKeyboardVisible = NookKeyboardState.isVisible(notification)
+    }
+    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+      isKeyboardVisible = false
+    }
+  }
+}
+
+private enum NookKeyboardState {
+  @MainActor
+  static func isVisible(_ notification: Notification) -> Bool {
+    guard
+      let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+      let windowScene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first
+    else {
+      return false
+    }
+
+    return frame.minY < windowScene.screen.bounds.maxY
   }
 }
 
@@ -464,22 +489,40 @@ private struct NookInputBar: View {
   @State private var measuredTextHeight: CGFloat = 24
 
   private let textFont = Font.system(size: 20, weight: .regular)
-  private let controlSize: CGFloat = 56
+  private let controlSize: CGFloat = 45
   private let minTextHeight: CGFloat = 24
   private let maxTextHeight: CGFloat = 124
 
   var body: some View {
+    inputBarContent
+      .onChange(of: model.draft) { _, newValue in
+        if !newValue.isEmpty && model.mode == .idle {
+          model.mode = .editing
+        }
+      }
+  }
+
+  @ViewBuilder
+  private var inputBarContent: some View {
+    if #available(iOS 26.0, *) {
+      GlassEffectContainer(spacing: 10) {
+        inputBarControls
+      }
+    } else {
+      inputBarControls
+    }
+  }
+
+  private var inputBarControls: some View {
     HStack(alignment: .bottom, spacing: 10) {
       Button {
         model.openAddMenu()
       } label: {
         Image(systemName: "plus")
-          .font(.system(size: 25, weight: .semibold))
+          .font(.system(size: 20, weight: .semibold))
           .foregroundStyle(NookTheme.primaryText)
           .frame(width: controlSize, height: controlSize)
-          .background(NookTheme.elevatedSurface, in: Circle())
-          .overlay(Circle().stroke(NookTheme.hairline, lineWidth: 0.5))
-          .nookShadow()
+          .nookAdaptiveSurface(in: Circle(), isInteractive: true)
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Add source")
@@ -541,15 +584,10 @@ private struct NookInputBar: View {
       .padding(.vertical, 6)
       .frame(maxWidth: .infinity)
       .frame(minHeight: controlSize)
-      .background(
-        NookTheme.elevatedSurface,
-        in: RoundedRectangle(cornerRadius: inputCornerRadius, style: .continuous)
+      .nookAdaptiveSurface(
+        in: RoundedRectangle(cornerRadius: inputCornerRadius, style: .continuous),
+        isInteractive: true
       )
-      .overlay(
-        RoundedRectangle(cornerRadius: inputCornerRadius, style: .continuous)
-          .stroke(NookTheme.hairline, lineWidth: 0.5)
-      )
-      .nookShadow()
 
       NookIconButton(
         systemName: trailingButtonSystemName,
@@ -560,11 +598,6 @@ private struct NookInputBar: View {
         trailingButtonAction()
       }
       .disabled(model.mode == .sending)
-    }
-    .onChange(of: model.draft) { _, newValue in
-      if !newValue.isEmpty && model.mode == .idle {
-        model.mode = .editing
-      }
     }
   }
 
@@ -581,7 +614,7 @@ private struct NookInputBar: View {
   }
 
   private var inputCornerRadius: CGFloat {
-    28
+    controlSize / 2
   }
 
   private var trailingButtonSystemName: String {
@@ -710,7 +743,8 @@ private struct NookAddSourceTile: View {
 
 private struct NookCollectionCategoriesView: View {
   var model: NookHomeModel
-  @State private var path: [CollectionCategory] = []
+  @Environment(\.dismiss) private var dismiss
+  @State private var path: [NookCollectionRoute] = []
 
   private let columns = [
     GridItem(.flexible(), spacing: 12),
@@ -725,7 +759,7 @@ private struct NookCollectionCategoriesView: View {
 
           LazyVGrid(columns: columns, spacing: 12) {
             ForEach(CollectionCategory.allCases) { category in
-              NavigationLink(value: category) {
+              NavigationLink(value: NookCollectionRoute.category(category)) {
                 NookCategoryTile(
                   category: category,
                   count: model.count(for: category)
@@ -740,10 +774,71 @@ private struct NookCollectionCategoriesView: View {
         .padding(.bottom, 28)
       }
       .scrollIndicators(.hidden)
-      .navigationDestination(for: CollectionCategory.self) { category in
-        NookCategoryDetailView(model: model, category: category)
+      .safeAreaInset(edge: .bottom) {
+        NookCollectionSheetActions(
+          close: { dismiss() },
+          openSettings: { path.append(.settings) }
+        )
+      }
+      .navigationDestination(for: NookCollectionRoute.self) { route in
+        switch route {
+        case let .category(category):
+          NookCategoryDetailView(model: model, category: category)
+        case .settings:
+          NookCollectionSettingsView {
+            if !path.isEmpty {
+              path.removeLast()
+            }
+          }
+        }
       }
     }
+  }
+}
+
+private enum NookCollectionRoute: Hashable {
+  case category(CollectionCategory)
+  case settings
+}
+
+private struct NookCollectionSheetActions: View {
+  var close: () -> Void
+  var openSettings: () -> Void
+
+  var body: some View {
+    HStack {
+      NookIconButton(
+        systemName: "xmark",
+        accessibilityLabel: "Close collection",
+        size: 45,
+        action: close
+      )
+
+      Spacer()
+
+      NookIconButton(
+        systemName: "gearshape",
+        accessibilityLabel: "Open settings",
+        style: .dark,
+        size: 45,
+        action: openSettings
+      )
+    }
+    .padding(.horizontal, 24)
+    .padding(.top, 8)
+    .padding(.bottom, 10)
+    .background(
+      LinearGradient(
+        colors: [
+          Color.white.opacity(0.0),
+          Color.white.opacity(0.96),
+          Color.white
+        ],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+      .ignoresSafeArea()
+    )
   }
 }
 
@@ -765,9 +860,9 @@ private struct NookCategoryHeader: View {
       Spacer()
 
       Image(systemName: "square.grid.2x2")
-        .font(.system(size: 22, weight: .semibold))
+        .font(.system(size: 20, weight: .semibold))
         .foregroundStyle(NookTheme.primaryText)
-        .frame(width: 52, height: 52)
+        .frame(width: 45, height: 45)
         .background(NookTheme.surface, in: Circle())
     }
     .accessibilityElement(children: .combine)
@@ -873,6 +968,118 @@ private struct NookCategoryEmptyState: View {
         .frame(maxWidth: 280)
     }
     .accessibilityElement(children: .combine)
+  }
+}
+
+private struct NookCollectionSettingsView: View {
+  var goBack: () -> Void
+  @State private var hapticsEnabled = true
+  @State private var reminderHintsEnabled = true
+  @State private var saveLinksAutomatically = false
+
+  var body: some View {
+    VStack(spacing: 0) {
+      NookSheetNavigationHeader(title: "Settings", goBack: goBack)
+
+      Form {
+        Section("Capture") {
+          Toggle(isOn: $hapticsEnabled) {
+            NookSettingsLabel(
+              title: "Haptics",
+              subtitle: "Play light feedback when saving an item.",
+              systemName: "hand.tap"
+            )
+          }
+
+          Toggle(isOn: $reminderHintsEnabled) {
+            NookSettingsLabel(
+              title: "Reminder hints",
+              subtitle: "Suggest reminders when a capture sounds time-sensitive.",
+              systemName: "bell"
+            )
+          }
+
+          Toggle(isOn: $saveLinksAutomatically) {
+            NookSettingsLabel(
+              title: "Auto-save links",
+              subtitle: "Keep shared links without asking for extra detail.",
+              systemName: "link"
+            )
+          }
+        }
+
+        Section("Workspace") {
+          LabeledContent {
+            Text("Inbox")
+              .foregroundStyle(NookTheme.secondaryText)
+          } label: {
+            Label("Default collection", systemImage: "tray")
+          }
+
+          LabeledContent {
+            Text("Local prototype")
+              .foregroundStyle(NookTheme.secondaryText)
+          } label: {
+            Label("Storage", systemImage: "externaldrive")
+          }
+        }
+      }
+      .scrollContentBackground(.hidden)
+    }
+    .background(NookTheme.background)
+    .tint(NookTheme.active)
+    .toolbar(.hidden, for: .navigationBar)
+  }
+}
+
+private struct NookSheetNavigationHeader: View {
+  let title: String
+  var goBack: () -> Void
+
+  var body: some View {
+    ZStack {
+      Text(title)
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(NookTheme.primaryText)
+        .lineLimit(1)
+
+      HStack {
+        NookIconButton(
+          systemName: "chevron.left",
+          accessibilityLabel: "Back",
+          size: 45,
+          action: goBack
+        )
+
+        Spacer()
+      }
+    }
+    .frame(height: 58)
+    .padding(.horizontal, 24)
+    .padding(.top, 4)
+    .background(NookTheme.background)
+  }
+}
+
+private struct NookSettingsLabel: View {
+  let title: String
+  let subtitle: String
+  let systemName: String
+
+  var body: some View {
+    Label {
+      VStack(alignment: .leading, spacing: 3) {
+        Text(title)
+
+        Text(subtitle)
+          .font(.caption)
+          .foregroundStyle(NookTheme.secondaryText)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    } icon: {
+      Image(systemName: systemName)
+    }
+    .labelStyle(.titleAndIcon)
   }
 }
 

@@ -34,9 +34,17 @@ xcodebuild -project apps/nook-ios/Nook.xcodeproj \
   build
 ```
 
+After each round of code changes, restart the app in the iOS Simulator before reporting back.
+
 ## Editing Rules
 
 - Keep canonical iOS project configuration in `apps/nook-ios/project.yml`.
 - Do not commit `xcuserdata`, `*.xcuserstate`, DerivedData, local `.env` files, or package caches.
 - Keep Nook product documentation in Chinese unless a term is a product name, API term, or established acronym.
 - Avoid migrating old PawPilot / Pet Mobility documents or app code unless explicitly requested.
+
+## iOS UI Rules
+
+- Prefer iOS 26 system-native SwiftUI components and Liquid Glass APIs for all new or edited UI components when they fit the design.
+- Gate iOS 26-only APIs with `#available(iOS 26.0, *)` and keep an automatic fallback that preserves the older design on earlier iOS versions.
+- Prefer shared adaptive styling helpers over duplicating custom backgrounds, borders, and shadows in individual components.

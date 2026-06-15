@@ -17,12 +17,11 @@ struct NookPillButton: View {
       .foregroundStyle(NookTheme.primaryText)
       .padding(.horizontal, 16)
       .frame(height: 46)
-      .background(NookTheme.elevatedSurface, in: Capsule())
-      .overlay(
-        Capsule()
-          .stroke(NookTheme.hairline, lineWidth: 0.5)
+      .nookAdaptiveSurface(
+        in: Capsule(),
+        fallbackShadow: NookTheme.tightShadow,
+        isInteractive: true
       )
-      .nookShadow(NookTheme.tightShadow)
     }
     .buttonStyle(.plain)
   }

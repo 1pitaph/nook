@@ -23,19 +23,23 @@ struct NookIconButton: View {
         .contentShape(Circle())
     }
     .buttonStyle(.plain)
-    .background(background)
-    .clipShape(Circle())
-    .overlay(border)
-    .nookShadow(style == .plain ? ShadowStyle(color: .clear, radius: 0, x: 0, y: 0) : NookTheme.tightShadow)
+    .nookAdaptiveSurface(
+      in: Circle(),
+      fallbackFill: fallbackFill,
+      fallbackBorder: fallbackBorder,
+      fallbackShadow: fallbackShadow,
+      glassTint: glassTint,
+      isInteractive: style != .plain
+    )
     .accessibilityLabel(accessibilityLabel)
   }
 
   private var iconSize: CGFloat {
     switch style {
     case .dark:
-      19
+      20
     case .light, .plain:
-      22
+      20
     }
   }
 
@@ -48,22 +52,41 @@ struct NookIconButton: View {
     }
   }
 
-  @ViewBuilder
-  private var background: some View {
+  private var fallbackFill: Color {
     switch style {
     case .dark:
-      Circle().fill(NookTheme.active)
+      NookTheme.active
     case .light:
-      Circle().fill(NookTheme.elevatedSurface)
+      NookTheme.elevatedSurface
     case .plain:
-      Circle().fill(Color.clear)
+      .clear
     }
   }
 
-  @ViewBuilder
-  private var border: some View {
-    if style == .light {
-      Circle().stroke(NookTheme.hairline, lineWidth: 0.5)
+  private var fallbackBorder: Color? {
+    switch style {
+    case .light:
+      NookTheme.hairline
+    case .dark, .plain:
+      nil
+    }
+  }
+
+  private var fallbackShadow: ShadowStyle? {
+    switch style {
+    case .light, .dark:
+      NookTheme.tightShadow
+    case .plain:
+      nil
+    }
+  }
+
+  private var glassTint: Color? {
+    switch style {
+    case .dark:
+      NookTheme.active
+    case .light, .plain:
+      nil
     }
   }
 }

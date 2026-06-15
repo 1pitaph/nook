@@ -39,12 +39,45 @@ extension View {
     shadow(color: style.color, radius: style.radius, x: style.x, y: style.y)
   }
 
+  @ViewBuilder
+  func nookAdaptiveSurface<S: Shape>(
+    in shape: S,
+    fallbackFill: Color = NookTheme.elevatedSurface,
+    fallbackBorder: Color? = NookTheme.hairline,
+    fallbackShadow: ShadowStyle? = NookTheme.softShadow,
+    glassTint: Color? = nil,
+    isInteractive: Bool = false
+  ) -> some View {
+    if #available(iOS 26.0, *) {
+      let baseGlass = glassTint.map { Glass.regular.tint($0) } ?? Glass.regular
+      let glass = isInteractive ? baseGlass.interactive() : baseGlass
+
+      glassEffect(glass, in: shape)
+    } else {
+      background(fallbackFill, in: shape)
+        .overlay {
+          if let fallbackBorder {
+            shape.stroke(fallbackBorder, lineWidth: 0.5)
+          }
+        }
+        .modifier(NookOptionalShadow(style: fallbackShadow))
+    }
+  }
+
   func nookCapsuleSurface() -> some View {
-    background(NookTheme.elevatedSurface, in: Capsule())
-      .overlay(
-        Capsule()
-          .stroke(NookTheme.hairline, lineWidth: 0.5)
-      )
-      .nookShadow()
+    nookAdaptiveSurface(in: Capsule())
+  }
+}
+
+private struct NookOptionalShadow: ViewModifier {
+  let style: ShadowStyle?
+
+  @ViewBuilder
+  func body(content: Content) -> some View {
+    if let style {
+      content.nookShadow(style)
+    } else {
+      content
+    }
   }
 }
