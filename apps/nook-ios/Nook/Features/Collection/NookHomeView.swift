@@ -746,6 +746,7 @@ private struct NookCollectionCategoriesView: View {
   var model: NookHomeModel
   @Environment(\.dismiss) private var dismiss
   @State private var path: [NookCollectionRoute] = []
+  @State private var presentedModal: NookCollectionModal?
 
   private let columns = [
     GridItem(.flexible(), spacing: 12),
@@ -778,20 +779,24 @@ private struct NookCollectionCategoriesView: View {
       .safeAreaInset(edge: .bottom) {
         NookCollectionSheetActions(
           close: { dismiss() },
-          openSettings: { path.append(.settings) }
+          openSettings: { presentedModal = .settings }
         )
       }
       .navigationDestination(for: NookCollectionRoute.self) { route in
         switch route {
         case let .category(category):
           NookCategoryDetailView(model: model, category: category)
-        case .settings:
-          NookCollectionSettingsView {
-            if !path.isEmpty {
-              path.removeLast()
-            }
-          }
         }
+      }
+    }
+    .sheet(item: $presentedModal) { modal in
+      switch modal {
+      case .settings:
+        NavigationStack {
+          NookCollectionSettingsView()
+        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
       }
     }
   }
@@ -799,7 +804,14 @@ private struct NookCollectionCategoriesView: View {
 
 private enum NookCollectionRoute: Hashable {
   case category(CollectionCategory)
+}
+
+private enum NookCollectionModal: String, Identifiable {
   case settings
+
+  var id: String {
+    rawValue
+  }
 }
 
 private struct NookCollectionSheetActions: View {
@@ -970,137 +982,6 @@ private struct NookCategoryEmptyState: View {
         .frame(maxWidth: 280)
     }
     .accessibilityElement(children: .combine)
-  }
-}
-
-private struct NookCollectionSettingsView: View {
-  var goBack: () -> Void
-  @State private var hapticsEnabled = true
-  @State private var reminderHintsEnabled = true
-  @State private var saveLinksAutomatically = false
-
-  var body: some View {
-    VStack(spacing: 0) {
-      NookSheetNavigationHeader(title: "Settings", goBack: goBack)
-
-      Form {
-        Section {
-          Toggle(isOn: $hapticsEnabled) {
-            NookSettingsLabel(
-              title: "Haptics",
-              subtitle: "Play light feedback when saving an item.",
-              systemName: "hand.tap"
-            )
-          }
-
-          Toggle(isOn: $reminderHintsEnabled) {
-            NookSettingsLabel(
-              title: "Reminder hints",
-              subtitle: "Suggest reminders when a capture sounds time-sensitive.",
-              systemName: "bell"
-            )
-          }
-
-          Toggle(isOn: $saveLinksAutomatically) {
-            NookSettingsLabel(
-              title: "Auto-save links",
-              subtitle: "Keep shared links without asking for extra detail.",
-              systemName: "link"
-            )
-          }
-        } header: {
-          Text("Capture")
-            .font(NookFont.app(13, weight: .semibold))
-        }
-
-        Section {
-          LabeledContent {
-            Text("Inbox")
-              .font(NookFont.app(15))
-              .foregroundStyle(NookTheme.secondaryText)
-          } label: {
-            Label {
-              Text("Default collection")
-                .font(NookFont.app(17))
-            } icon: {
-              Image(systemName: "tray")
-            }
-          }
-
-          LabeledContent {
-            Text("Local prototype")
-              .font(NookFont.app(15))
-              .foregroundStyle(NookTheme.secondaryText)
-          } label: {
-            Label {
-              Text("Storage")
-                .font(NookFont.app(17))
-            } icon: {
-              Image(systemName: "externaldrive")
-            }
-          }
-        } header: {
-          Text("Workspace")
-            .font(NookFont.app(13, weight: .semibold))
-        }
-      }
-      .scrollContentBackground(.hidden)
-    }
-    .background(NookTheme.background)
-    .tint(NookTheme.active)
-    .toolbar(.hidden, for: .navigationBar)
-  }
-}
-
-private struct NookSheetNavigationHeader: View {
-  let title: String
-  var goBack: () -> Void
-
-  var body: some View {
-    ZStack {
-      Text(title)
-        .font(NookFont.app(17, weight: .semibold))
-        .foregroundStyle(NookTheme.primaryText)
-        .lineLimit(1)
-
-      HStack {
-        NookIconButton(
-          systemName: "chevron.left",
-          accessibilityLabel: "Back",
-          size: 45,
-          action: goBack
-        )
-
-        Spacer()
-      }
-    }
-    .frame(height: 58)
-    .padding(.horizontal, 24)
-    .padding(.top, 4)
-    .background(NookTheme.background)
-  }
-}
-
-private struct NookSettingsLabel: View {
-  let title: String
-  let subtitle: String
-  let systemName: String
-
-  var body: some View {
-    Label {
-      VStack(alignment: .leading, spacing: 3) {
-        Text(title)
-          .font(NookFont.app(17))
-
-        Text(subtitle)
-          .font(NookFont.app(12))
-          .foregroundStyle(NookTheme.secondaryText)
-          .fixedSize(horizontal: false, vertical: true)
-      }
-    } icon: {
-      Image(systemName: systemName)
-    }
-    .labelStyle(.titleAndIcon)
   }
 }
 

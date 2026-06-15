@@ -15,6 +15,7 @@
 		A078F71FC2516DB51EDCCA77 /* NookHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB14FC7F9C70350211CEEAE /* NookHomeView.swift */; };
 		A4A0E1DA0DDA1431733498E3 /* NookApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E12DEFF243E7B4B84A7A135 /* NookApp.swift */; };
 		BE3DF9EFC19D1F4B9DE39A46 /* NookSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C616445B6A7FD9489D50F5 /* NookSuggestion.swift */; };
+		C863E7BFCDEE301DD6650538 /* NookCollectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E97C3197F3DCFFEDC3989A /* NookCollectionSettingsView.swift */; };
 		E4A999863A6866356F221440 /* NookIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D53F519834BD78A9C1BEEA /* NookIconButton.swift */; };
 		F65D83602F0FEBD549FD2C57 /* NookPillButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF1E035D557D1DE4DB373DA /* NookPillButton.swift */; };
 		FEB57A52CBDA8F851796A715 /* NookTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812F326CE2E54698858EE0B7 /* NookTheme.swift */; };
@@ -34,6 +35,7 @@
 		C10C52E64E22A80179251010 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D04837C7A0A47EA7F085B624 /* NookHomeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookHomeModel.swift; sourceTree = "<group>"; };
 		D0C616445B6A7FD9489D50F5 /* NookSuggestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookSuggestion.swift; sourceTree = "<group>"; };
+		F5E97C3197F3DCFFEDC3989A /* NookCollectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookCollectionSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -97,6 +99,7 @@
 		AFF5BFA74B20392DA5809168 /* Collection */ = {
 			isa = PBXGroup;
 			children = (
+				F5E97C3197F3DCFFEDC3989A /* NookCollectionSettingsView.swift */,
 				D04837C7A0A47EA7F085B624 /* NookHomeModel.swift */,
 				7EB14FC7F9C70350211CEEAE /* NookHomeView.swift */,
 			);
@@ -211,6 +214,7 @@
 			files = (
 				25490E0A8E5492258B4E85AE /* CollectionEntry.swift in Sources */,
 				A4A0E1DA0DDA1431733498E3 /* NookApp.swift in Sources */,
+				C863E7BFCDEE301DD6650538 /* NookCollectionSettingsView.swift in Sources */,
 				6F2E480391421D408BB44BBC /* NookHomeModel.swift in Sources */,
 				A078F71FC2516DB51EDCCA77 /* NookHomeView.swift in Sources */,
 				E4A999863A6866356F221440 /* NookIconButton.swift in Sources */,
