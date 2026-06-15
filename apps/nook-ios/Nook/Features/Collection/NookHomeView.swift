@@ -59,23 +59,37 @@ private struct NookTopBar: View {
   var model: NookHomeModel
 
   var body: some View {
-    HStack {
+    HStack(spacing: 0) {
       Text("nook")
         .font(NookFont.app(31, weight: .bold))
         .foregroundStyle(NookTheme.primaryText)
         .accessibilityAddTraits(.isHeader)
 
-      Spacer()
+      Spacer(minLength: 12)
 
-      NookIconButton(
-        systemName: "square.grid.2x2",
-        accessibilityLabel: "Open collection categories",
-        size: 45
-      ) {
-        model.openCollectionCategories()
+      if let activeCategoryFilter = model.activeCategoryFilter {
+        NookActiveFilterPill(
+          category: activeCategoryFilter,
+          clear: {
+            model.clearFilter()
+          },
+          openCollection: {
+            model.openCollectionCategories()
+          }
+        )
+        .transition(.scale(scale: 0.94).combined(with: .opacity))
+      } else {
+        NookIconButton(
+          systemName: "square.grid.2x2",
+          accessibilityLabel: "Open collection categories",
+          size: 45
+        ) {
+          model.openCollectionCategories()
+        }
       }
     }
     .frame(height: 58)
+    .animation(.snappy(duration: 0.24), value: model.activeCategoryFilter)
   }
 }
 
@@ -84,12 +98,55 @@ private struct NookContentCanvas: View {
 
   var body: some View {
     NookMessageTimeline(
-      entries: model.entries,
+      entries: model.visibleEntries,
       topPadding: 24,
       bottomPadding: model.shouldShowSuggestions ? 196 : 116,
       emptyHeight: 420,
       scrollToLatest: true
     )
+  }
+}
+
+private struct NookActiveFilterPill: View {
+  let category: CollectionCategory
+  var clear: () -> Void
+  var openCollection: () -> Void
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Button(action: clear) {
+        Image(systemName: "xmark")
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(.white)
+          .frame(width: 22, height: 22)
+          .background(NookTheme.primaryText, in: Circle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("Clear \(category.label) filter")
+
+      Button(action: openCollection) {
+        Text(category.label)
+          .font(NookFont.app(15, weight: .semibold))
+          .foregroundStyle(NookTheme.primaryText)
+          .lineLimit(1)
+          .minimumScaleFactor(0.78)
+          .frame(minHeight: 38, alignment: .leading)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityLabel("Open \(category.label) collection")
+    }
+    .padding(.leading, 8)
+    .padding(.trailing, 14)
+    .frame(height: 38)
+    .fixedSize(horizontal: true, vertical: false)
+    .nookAdaptiveSurface(
+      in: Capsule(),
+      fallbackFill: NookTheme.surface,
+      fallbackShadow: NookTheme.tightShadow,
+      isInteractive: true
+    )
+    .accessibilityElement(children: .contain)
   }
 }
 

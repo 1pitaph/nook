@@ -16,6 +16,7 @@ final class NookHomeModel {
   var suggestions: [NookSuggestion]
   var mode: ComposerMode = .idle
   var activeSheet: NookSheet?
+  var activeCategoryFilter: CollectionCategory?
   var selectedSource: CollectionEntry.Source = .text
 
   private let entryFactory: CollectionEntryFactory
@@ -39,6 +40,14 @@ final class NookHomeModel {
 
   var shouldShowSuggestions: Bool {
     entries.isEmpty && mode != .recording && draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
+  var visibleEntries: [CollectionEntry] {
+    guard let activeCategoryFilter else {
+      return entries
+    }
+
+    return entries(for: activeCategoryFilter)
   }
 
   func count(for category: CollectionCategory) -> Int {
@@ -123,6 +132,14 @@ final class NookHomeModel {
 
   func openCollectionCategories() {
     activeSheet = .categories
+  }
+
+  func applyFilter(_ category: CollectionCategory) {
+    activeCategoryFilter = category
+  }
+
+  func clearFilter() {
+    activeCategoryFilter = nil
   }
 
   func openAddMenu() {

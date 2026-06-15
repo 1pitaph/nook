@@ -3,7 +3,6 @@ import SwiftUI
 struct NookCollectionCategoriesView: View {
   var model: NookHomeModel
   @Environment(\.dismiss) private var dismiss
-  @State private var path: [NookCollectionRoute] = []
   @State private var presentedModal: NookCollectionModal?
 
   private let columns = [
@@ -12,14 +11,17 @@ struct NookCollectionCategoriesView: View {
   ]
 
   var body: some View {
-    NavigationStack(path: $path) {
+    NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 20) {
           NookCategoryHeader(totalCount: model.entries.count)
 
           LazyVGrid(columns: columns, spacing: 12) {
             ForEach(CollectionCategory.allCases) { category in
-              NavigationLink(value: NookCollectionRoute.category(category)) {
+              Button {
+                model.applyFilter(category)
+                dismiss()
+              } label: {
                 NookCategoryTile(
                   category: category,
                   count: model.count(for: category)
@@ -40,12 +42,6 @@ struct NookCollectionCategoriesView: View {
           openSettings: { presentedModal = .settings }
         )
       }
-      .navigationDestination(for: NookCollectionRoute.self) { route in
-        switch route {
-        case let .category(category):
-          NookCategoryDetailView(model: model, category: category)
-        }
-      }
     }
     .sheet(item: $presentedModal) { modal in
       switch modal {
@@ -58,10 +54,6 @@ struct NookCollectionCategoriesView: View {
       }
     }
   }
-}
-
-private enum NookCollectionRoute: Hashable {
-  case category(CollectionCategory)
 }
 
 private enum NookCollectionModal: String, Identifiable {
@@ -190,61 +182,5 @@ private struct NookCategoryTile: View {
     )
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("\(category.label), \(count)")
-  }
-}
-
-private struct NookCategoryDetailView: View {
-  var model: NookHomeModel
-  let category: CollectionCategory
-
-  var body: some View {
-    let entries = model.entries(for: category)
-
-    ZStack {
-      NookMessageTimeline(
-        entries: entries,
-        topPadding: 12,
-        bottomPadding: 28
-      )
-      .opacity(entries.isEmpty ? 0 : 1)
-      .accessibilityHidden(entries.isEmpty)
-
-      if entries.isEmpty {
-        ScrollView {
-          NookCategoryEmptyState(category: category)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 360)
-            .padding(.horizontal, 24)
-        }
-        .scrollIndicators(.hidden)
-      }
-    }
-    .navigationTitle(category.label)
-    .navigationBarTitleDisplayMode(.inline)
-  }
-}
-
-private struct NookCategoryEmptyState: View {
-  let category: CollectionCategory
-
-  var body: some View {
-    VStack(spacing: 14) {
-      Image(systemName: category.symbolName)
-        .font(.system(size: 30, weight: .semibold))
-        .foregroundStyle(NookTheme.primaryText)
-        .frame(width: 62, height: 62)
-        .background(NookTheme.surface, in: Circle())
-
-      Text("No \(category.label) yet")
-        .font(NookFont.app(21, weight: .bold))
-        .foregroundStyle(NookTheme.primaryText)
-
-      Text("New captures will appear here when they match this category.")
-        .font(NookFont.app(16, weight: .medium))
-        .foregroundStyle(NookTheme.secondaryText)
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: 280)
-    }
-    .accessibilityElement(children: .combine)
   }
 }
