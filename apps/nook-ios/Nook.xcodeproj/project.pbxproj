@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		251F4218B86AE24B481037E1 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 01D6BE0E61F0F81115B33981 /* AppIcon.icon */; };
 		25490E0A8E5492258B4E85AE /* CollectionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F91D014A1FEE05A98D0DCF3 /* CollectionEntry.swift */; };
 		2BB3602A4B19FC4C05F0C451 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 170212C508F45D65AB1B9513 /* Assets.xcassets */; };
 		6F2E480391421D408BB44BBC /* NookHomeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04837C7A0A47EA7F085B624 /* NookHomeModel.swift */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		01D6BE0E61F0F81115B33981 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		170212C508F45D65AB1B9513 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1E12DEFF243E7B4B84A7A135 /* NookApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookApp.swift; sourceTree = "<group>"; };
 		27D53F519834BD78A9C1BEEA /* NookIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookIconButton.swift; sourceTree = "<group>"; };
@@ -35,6 +37,7 @@
 		3B0328E73DB78F0B95AD9373 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				01D6BE0E61F0F81115B33981 /* AppIcon.icon */,
 				170212C508F45D65AB1B9513 /* Assets.xcassets */,
 			);
 			path = Resources;
@@ -180,6 +183,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				251F4218B86AE24B481037E1 /* AppIcon.icon in Resources */,
 				2BB3602A4B19FC4C05F0C451 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

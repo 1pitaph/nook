@@ -314,19 +314,9 @@ private struct NookInputBar: View {
           measuredTextHeight = min(max(newHeight, minTextHeight), maxTextHeight)
         }
 
-        Button {
-          model.toggleRecording()
-        } label: {
-          Image(systemName: model.mode == .recording ? "stop.fill" : "mic")
-            .font(.system(size: 22, weight: .semibold))
-            .foregroundStyle(model.mode == .recording ? NookTheme.primaryText : NookTheme.tertiaryText)
-            .frame(width: 34, height: 44)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(model.mode == .recording ? "Stop recording" : "Record voice note")
       }
       .padding(.leading, 18)
-      .padding(.trailing, 12)
+      .padding(.trailing, 18)
       .padding(.vertical, 6)
       .frame(maxWidth: .infinity)
       .frame(minHeight: controlSize)
@@ -341,13 +331,12 @@ private struct NookInputBar: View {
       .nookShadow()
 
       NookIconButton(
-        systemName: model.mode == .sending ? "hourglass" : "arrow.up",
-        accessibilityLabel: "Send collection item",
+        systemName: trailingButtonSystemName,
+        accessibilityLabel: trailingButtonAccessibilityLabel,
         style: .dark,
         size: controlSize
       ) {
-        model.sendDraft()
-        isFocused = false
+        trailingButtonAction()
       }
       .disabled(model.mode == .sending)
     }
@@ -372,6 +361,38 @@ private struct NookInputBar: View {
 
   private var inputCornerRadius: CGFloat {
     28
+  }
+
+  private var trailingButtonSystemName: String {
+    if model.mode == .sending {
+      return "hourglass"
+    }
+    if shouldDismissKeyboard {
+      return "keyboard.chevron.compact.down"
+    }
+    return "arrow.up"
+  }
+
+  private var trailingButtonAccessibilityLabel: String {
+    shouldDismissKeyboard ? "Dismiss keyboard" : "Send collection item"
+  }
+
+  private func trailingButtonAction() {
+    if shouldDismissKeyboard {
+      isFocused = false
+      return
+    }
+
+    model.sendDraft()
+    isFocused = false
+  }
+
+  private var hasDraftContent: Bool {
+    !model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
+  private var shouldDismissKeyboard: Bool {
+    isFocused && !hasDraftContent
   }
 }
 
