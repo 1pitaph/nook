@@ -238,8 +238,7 @@ private struct NookImageBubbleContent: View {
   let entry: CollectionEntry
 
   var body: some View {
-    if let imageData = entry.imageData,
-       let uiImage = UIImage(data: imageData) {
+    if let uiImage = image {
       Image(uiImage: uiImage)
         .resizable()
         .scaledToFill()
@@ -254,6 +253,24 @@ private struct NookImageBubbleContent: View {
     } else {
       NookImageUnavailableView()
     }
+  }
+
+  private var image: UIImage? {
+    if let imageData = entry.imageData,
+       let uiImage = UIImage(data: imageData) {
+      return uiImage
+    }
+
+    let imageURLs = [entry.thumbnailURL, entry.imageURL].compactMap(\.self)
+    for imageURL in imageURLs {
+      guard let data = try? Data(contentsOf: imageURL),
+            let uiImage = UIImage(data: data) else {
+        continue
+      }
+      return uiImage
+    }
+
+    return nil
   }
 }
 

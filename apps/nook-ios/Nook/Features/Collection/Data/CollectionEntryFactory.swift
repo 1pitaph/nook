@@ -42,6 +42,23 @@ struct CollectionEntryFactory {
       imageData: data
     )
   }
+
+  func imageEntry(attachment: CollectionImageAttachment) -> CollectionEntry {
+    CollectionEntry(
+      title: "Photo from library",
+      detail: "Image selected from Photos.",
+      source: .image,
+      tags: tagger.tags(for: "", source: .image, linkURL: nil),
+      imageFileName: attachment.imageFileName,
+      thumbnailFileName: attachment.thumbnailFileName,
+      imageURL: attachment.imageURL,
+      thumbnailURL: attachment.thumbnailURL,
+      imagePixelWidth: attachment.pixelWidth,
+      imagePixelHeight: attachment.pixelHeight,
+      imageByteCount: attachment.byteCount,
+      imageContentType: attachment.contentType
+    )
+  }
 }
 
 struct CollectionLinkDetector {

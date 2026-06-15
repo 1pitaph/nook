@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct NookCollectionSettingsView: View {
-  @State private var hapticsEnabled = true
-  @State private var reminderHintsEnabled = true
-  @State private var saveLinksAutomatically = false
+  @AppStorage("nook.settings.hapticsEnabled") private var hapticsEnabled = true
+  @AppStorage("nook.settings.reminderHintsEnabled") private var reminderHintsEnabled = true
+  @AppStorage("nook.settings.saveLinksAutomatically") private var saveLinksAutomatically = false
 
   var body: some View {
     Form {
@@ -51,7 +51,7 @@ struct NookCollectionSettingsView: View {
         }
 
         LabeledContent {
-          Text("Local prototype")
+          Text("On-device library")
             .font(NookFont.app(15))
             .foregroundStyle(NookTheme.secondaryText)
         } label: {

@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 import UIKit
 
 #if DEBUG
 #Preview("Empty") {
   NookHomeView()
+    .modelContainer(for: PersistedCollectionEntry.self, inMemory: true)
 }
 
 #Preview("With message bubbles") {

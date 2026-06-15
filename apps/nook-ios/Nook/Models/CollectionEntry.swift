@@ -1,7 +1,7 @@
 import Foundation
 
 struct CollectionEntry: Identifiable, Equatable {
-  enum Source: String, CaseIterable {
+  enum Source: String, CaseIterable, Codable {
     case text
     case link
     case image
@@ -47,6 +47,14 @@ struct CollectionEntry: Identifiable, Equatable {
   var tags: [String]
   var linkURL: URL?
   var imageData: Data?
+  var imageFileName: String?
+  var thumbnailFileName: String?
+  var imageURL: URL?
+  var thumbnailURL: URL?
+  var imagePixelWidth: Int?
+  var imagePixelHeight: Int?
+  var imageByteCount: Int?
+  var imageContentType: String?
 
   init(
     id: UUID = UUID(),
@@ -56,7 +64,15 @@ struct CollectionEntry: Identifiable, Equatable {
     createdAt: Date = .now,
     tags: [String] = [],
     linkURL: URL? = nil,
-    imageData: Data? = nil
+    imageData: Data? = nil,
+    imageFileName: String? = nil,
+    thumbnailFileName: String? = nil,
+    imageURL: URL? = nil,
+    thumbnailURL: URL? = nil,
+    imagePixelWidth: Int? = nil,
+    imagePixelHeight: Int? = nil,
+    imageByteCount: Int? = nil,
+    imageContentType: String? = nil
   ) {
     self.id = id
     self.title = title
@@ -66,5 +82,13 @@ struct CollectionEntry: Identifiable, Equatable {
     self.tags = tags
     self.linkURL = linkURL
     self.imageData = imageData
+    self.imageFileName = imageFileName
+    self.thumbnailFileName = thumbnailFileName
+    self.imageURL = imageURL
+    self.thumbnailURL = thumbnailURL
+    self.imagePixelWidth = imagePixelWidth
+    self.imagePixelHeight = imagePixelHeight
+    self.imageByteCount = imageByteCount
+    self.imageContentType = imageContentType
   }
 }

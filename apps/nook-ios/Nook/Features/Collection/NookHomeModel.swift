@@ -21,17 +21,20 @@ final class NookHomeModel {
 
   private let entryFactory: CollectionEntryFactory
   private let categorizer: CollectionCategorizer
+  private let collectionStore: CollectionStore?
 
   init(
     entries: [CollectionEntry] = [],
     suggestions: [NookSuggestion] = NookSuggestionCatalog.defaults,
     entryFactory: CollectionEntryFactory = CollectionEntryFactory(),
-    categorizer: CollectionCategorizer = CollectionCategorizer()
+    categorizer: CollectionCategorizer = CollectionCategorizer(),
+    collectionStore: CollectionStore? = nil
   ) {
     self.entries = entries
     self.suggestions = suggestions
     self.entryFactory = entryFactory
     self.categorizer = categorizer
+    self.collectionStore = collectionStore
   }
 
   var canSend: Bool {
@@ -82,19 +85,47 @@ final class NookHomeModel {
     }
 
     mode = .sending
-    entries.insert(entry, at: 0)
-    draft = ""
-    selectedSource = .text
-    mode = .idle
-    rotateSuggestions()
+    do {
+      let savedEntry = try collectionStore?.save(entry) ?? entry
+      entries.insert(savedEntry, at: 0)
+      draft = ""
+      selectedSource = .text
+      mode = .idle
+      rotateSuggestions()
+    } catch {
+      mode = .editing
+      activeSheet = .capture("Nook could not save that item.")
+    }
   }
 
   func addImage(data: Data) {
     mode = .sending
-    entries.insert(entryFactory.imageEntry(data: data), at: 0)
-    selectedSource = .text
-    mode = .idle
-    rotateSuggestions()
+    do {
+      let entry = try collectionStore?.saveImage(
+        data: data,
+        entryFactory: entryFactory
+      ) ?? entryFactory.imageEntry(data: data)
+      entries.insert(entry, at: 0)
+      selectedSource = .text
+      mode = .idle
+      rotateSuggestions()
+    } catch {
+      selectedSource = .text
+      mode = .idle
+      activeSheet = .capture("Nook could not save that image.")
+    }
+  }
+
+  func loadPersistedEntries() {
+    guard let collectionStore else {
+      return
+    }
+
+    do {
+      entries = try collectionStore.loadEntries()
+    } catch {
+      activeSheet = .capture("Nook could not load saved items.")
+    }
   }
 
   func showCaptureMessage(_ message: String) {

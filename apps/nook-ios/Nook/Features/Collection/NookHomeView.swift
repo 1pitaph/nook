@@ -1,11 +1,39 @@
 import SwiftUI
+import SwiftData
 
 struct NookHomeView: View {
-  @State private var model = NookHomeModel()
+  @Environment(\.modelContext) private var modelContext
+  @State private var model: NookHomeModel?
 
   var body: some View {
-    @Bindable var model = model
+    Group {
+      if let model {
+        NookHomeContent(model: model)
+      } else {
+        NookHomeLoadingView()
+      }
+    }
+    .task {
+      configureModelIfNeeded()
+    }
+  }
 
+  private func configureModelIfNeeded() {
+    guard model == nil else {
+      return
+    }
+
+    let collectionStore = CollectionStore(modelContext: modelContext)
+    let loadedModel = NookHomeModel(collectionStore: collectionStore)
+    loadedModel.loadPersistedEntries()
+    model = loadedModel
+  }
+}
+
+private struct NookHomeContent: View {
+  @Bindable var model: NookHomeModel
+
+  var body: some View {
     NookHomeScaffold(model: model)
       .sheet(item: $model.activeSheet) { sheet in
         sheetContent(for: sheet)
@@ -30,6 +58,19 @@ struct NookHomeView: View {
         .presentationDetents([.height(230)])
         .presentationDragIndicator(.visible)
     }
+  }
+}
+
+private struct NookHomeLoadingView: View {
+  var body: some View {
+    ZStack {
+      NookTheme.background
+        .ignoresSafeArea()
+
+      ProgressView()
+        .tint(NookTheme.primaryText)
+    }
+    .preferredColorScheme(.light)
   }
 }
 
