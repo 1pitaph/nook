@@ -16,7 +16,9 @@
 		2BB3602A4B19FC4C05F0C451 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 170212C508F45D65AB1B9513 /* Assets.xcassets */; };
 		3517A21A9777420436B268E6 /* CollectionSelectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9DC8FD2F5D7F481E44A81B /* CollectionSelectionState.swift */; };
 		3B463469A24F59F383FA0B0C /* CollectionEntryImageResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE94F29962633220B96E3A05 /* CollectionEntryImageResolver.swift */; };
+		4B981E76E9576A493C02437E /* NookLinkPreviewBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F9FC099E0FC7196E4177077 /* NookLinkPreviewBubble.swift */; };
 		4DBAC4480BC014672AA33753 /* NookComposerDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23388A745A9C4C66A3BD7FE3 /* NookComposerDock.swift */; };
+		56CF76AF1BDB1B10345459E2 /* NookLinkPreviewMetadataLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BDF1A440A92EF477E3E0E11 /* NookLinkPreviewMetadataLoader.swift */; };
 		66D9D77C60224F5FAD858EC7 /* PersistedCollectionEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD8DE92E99F597AE0111C77 /* PersistedCollectionEntry.swift */; };
 		6F2E480391421D408BB44BBC /* NookHomeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D04837C7A0A47EA7F085B624 /* NookHomeModel.swift */; };
 		6F6566999ED7148B7FD63C9C /* NookSuggestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18413CBC4E5AD68349ABB005 /* NookSuggestion.swift */; };
@@ -58,6 +60,8 @@
 		23388A745A9C4C66A3BD7FE3 /* NookComposerDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookComposerDock.swift; sourceTree = "<group>"; };
 		24B19666B8F36B03B7BE08C4 /* CollectionShareItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionShareItem.swift; sourceTree = "<group>"; };
 		27D53F519834BD78A9C1BEEA /* NookIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookIconButton.swift; sourceTree = "<group>"; };
+		2F9FC099E0FC7196E4177077 /* NookLinkPreviewBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookLinkPreviewBubble.swift; sourceTree = "<group>"; };
+		3BDF1A440A92EF477E3E0E11 /* NookLinkPreviewMetadataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookLinkPreviewMetadataLoader.swift; sourceTree = "<group>"; };
 		46854701395B8FDAA7C8B492 /* NookMessageTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NookMessageTimeline.swift; sourceTree = "<group>"; };
 		4CF244FB248C3BACED66E2FC /* CollectionEntryFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEntryFactory.swift; sourceTree = "<group>"; };
 		4F91D014A1FEE05A98D0DCF3 /* CollectionEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionEntry.swift; sourceTree = "<group>"; };
@@ -176,6 +180,7 @@
 				7C136AD21BC2136C63BEA836 /* NookCollectionCategoriesView.swift */,
 				23388A745A9C4C66A3BD7FE3 /* NookComposerDock.swift */,
 				B5918AA2D4EF119CE3A1264B /* NookInputBar.swift */,
+				2F9FC099E0FC7196E4177077 /* NookLinkPreviewBubble.swift */,
 				7B8A5A75151B4CD209019AFC /* NookMessageContextMenu.swift */,
 				46854701395B8FDAA7C8B492 /* NookMessageTimeline.swift */,
 				209B510A4D8DF4584B5A259C /* NookSelectionToolbar.swift */,
@@ -206,6 +211,7 @@
 				CE94F29962633220B96E3A05 /* CollectionEntryImageResolver.swift */,
 				FBDD32FC5C492254B50A1E73 /* CollectionImageAttachment.swift */,
 				01D67F22D77737DAA30C0D9D /* CollectionStore.swift */,
+				3BDF1A440A92EF477E3E0E11 /* NookLinkPreviewMetadataLoader.swift */,
 				1CD8DE92E99F597AE0111C77 /* PersistedCollectionEntry.swift */,
 			);
 			path = Data;
@@ -342,6 +348,8 @@
 				A078F71FC2516DB51EDCCA77 /* NookHomeView.swift in Sources */,
 				E4A999863A6866356F221440 /* NookIconButton.swift in Sources */,
 				9CEF3F743219386FDD9A8560 /* NookInputBar.swift in Sources */,
+				4B981E76E9576A493C02437E /* NookLinkPreviewBubble.swift in Sources */,
+				56CF76AF1BDB1B10345459E2 /* NookLinkPreviewMetadataLoader.swift in Sources */,
 				AB979BBE023777A02BA0422A /* NookMessageContextMenu.swift in Sources */,
 				A8AFAE53CE50C86F73F0B399 /* NookMessageTimeline.swift in Sources */,
 				F65D83602F0FEBD549FD2C57 /* NookPillButton.swift in Sources */,

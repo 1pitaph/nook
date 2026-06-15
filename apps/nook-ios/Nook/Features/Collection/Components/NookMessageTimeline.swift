@@ -172,9 +172,7 @@ private struct NookMessageBubble: View {
       case .text:
         NookTextBubbleContent(entry: entry)
       case .link:
-        NookRichBubbleContent(entry: entry, accent: NookTheme.note) {
-          NookLinkBubbleContent(entry: entry)
-        }
+        NookLinkPreviewBubble(entry: entry)
       case .image:
         NookRichBubbleContent(entry: entry, accent: NookTheme.primaryText) {
           NookImageBubbleContent(entry: entry)
@@ -188,8 +186,9 @@ private struct NookMessageBubble: View {
         }
       }
     }
-    .padding(entry.source == .text ? 15 : 14)
+    .padding(bubblePadding)
     .background(side.isOutgoing ? NookTheme.active : NookTheme.surface, in: bubbleShape)
+    .clipShape(bubbleShape)
     .overlay(
       bubbleShape
         .stroke(borderColor, lineWidth: isSelected ? 2 : 0.5)
@@ -203,6 +202,17 @@ private struct NookMessageBubble: View {
     }
 
     return side.isOutgoing ? Color.clear : NookTheme.hairline
+  }
+
+  private var bubblePadding: CGFloat {
+    switch entry.source {
+    case .text:
+      15
+    case .link:
+      0
+    case .image, .voice, .file:
+      14
+    }
   }
 }
 
@@ -259,41 +269,6 @@ private struct NookRichBubbleContent<Content: View>: View {
       NookTagRow(tags: entry.tags)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-private struct NookLinkBubbleContent: View {
-  let entry: CollectionEntry
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text(entry.detail)
-        .font(.system(size: 16, weight: .regular))
-        .foregroundStyle(NookTheme.secondaryText)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-      if let linkURL = entry.linkURL {
-        HStack(spacing: 6) {
-          Image(systemName: "link")
-            .font(.system(size: 12, weight: .bold))
-
-          Text(linkLabel(for: linkURL))
-            .font(.system(size: 13, weight: .semibold))
-            .lineLimit(2)
-            .truncationMode(.middle)
-        }
-        .foregroundStyle(NookTheme.note)
-        .frame(maxWidth: .infinity, alignment: .leading)
-      }
-    }
-  }
-
-  private func linkLabel(for url: URL) -> String {
-    if let host = url.host {
-      return host.replacingOccurrences(of: "www.", with: "")
-    }
-    return url.absoluteString
   }
 }
 

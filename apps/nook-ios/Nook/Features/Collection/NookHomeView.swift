@@ -188,7 +188,7 @@ private struct NookContentCanvas: View {
 
   private var bottomPadding: CGFloat {
     if model.selectionState.isSelecting {
-      return 96
+      return 22
     }
 
     return model.shouldShowSuggestions ? 196 : 24

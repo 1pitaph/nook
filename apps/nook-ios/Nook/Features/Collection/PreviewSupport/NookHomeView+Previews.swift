@@ -37,11 +37,12 @@ extension CollectionEntry {
       tags: ["product", "draft"]
     ),
     CollectionEntry(
-      title: "Article to read later",
-      detail: "https://example.com/chat-shaped-collection",
+      title: "spotify.design",
+      detail: "Designing Data Science Tools at Spotify, Part 2",
       source: .link,
-      tags: ["link", "reading"],
-      linkURL: URL(string: "https://example.com/chat-shaped-collection")
+      tags: ["design", "link"],
+      linkURL: URL(string: "https://spotify.design/article/designing-data-science-tools-at-spotify-part-2"),
+      imageData: NookPreviewImage.linkPreviewData
     ),
     CollectionEntry(
       title: "Photo from library",
@@ -61,11 +62,12 @@ extension CollectionEntry {
         imageData: NookPreviewImage.data
       ),
       CollectionEntry(
-        title: "example.com",
-        detail: "https://example.com/chat-shaped-collection",
+        title: "spotify.design",
+        detail: "Designing Data Science Tools at Spotify, Part 2",
         source: .link,
-        tags: ["link", "reading"],
-        linkURL: URL(string: "https://example.com/chat-shaped-collection")
+        tags: ["design", "link"],
+        linkURL: URL(string: "https://spotify.design/article/designing-data-science-tools-at-spotify-part-2"),
+        imageData: NookPreviewImage.linkPreviewData
       ),
       CollectionEntry(
         title: "Inbox structure for nook",
@@ -111,6 +113,39 @@ private enum NookPreviewImage {
       )
     }
     return image.jpegData(compressionQuality: 0.86)
+  }
+
+  static var linkPreviewData: Data? {
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 520, height: 272))
+    let image = renderer.image { context in
+      UIColor(red: 0.02, green: 0.02, blue: 0.025, alpha: 1).setFill()
+      context.fill(CGRect(x: 0, y: 0, width: 520, height: 272))
+
+      UIColor(red: 0.98, green: 0.17, blue: 0.12, alpha: 1).setFill()
+      context.fill(CGRect(x: 0, y: 0, width: 520, height: 168))
+
+      UIColor(red: 0.98, green: 0.40, blue: 0.30, alpha: 1).setStroke()
+      context.cgContext.setLineWidth(5)
+      for index in 0..<10 {
+        let y = CGFloat(index) * 14 + 18
+        context.cgContext.move(to: CGPoint(x: 52, y: y))
+        context.cgContext.addCurve(
+          to: CGPoint(x: 340, y: y + 52),
+          control1: CGPoint(x: 160, y: y - 18),
+          control2: CGPoint(x: 240, y: y + 70)
+        )
+        context.cgContext.strokePath()
+      }
+
+      UIColor.white.withAlphaComponent(0.92).setFill()
+      context.cgContext.fillEllipse(in: CGRect(x: 24, y: 190, width: 24, height: 24))
+
+      UIColor.white.withAlphaComponent(0.72).setFill()
+      context.fill(CGRect(x: 64, y: 188, width: 156, height: 13))
+      context.fill(CGRect(x: 24, y: 226, width: 288, height: 11))
+      context.fill(CGRect(x: 24, y: 246, width: 220, height: 11))
+    }
+    return image.jpegData(compressionQuality: 0.88)
   }
 }
 #endif
