@@ -4,8 +4,9 @@ import SwiftUI
 struct NookAddMenu: View {
   var model: NookHomeModel
   @Environment(\.dismiss) private var dismiss
-  @State private var selectedPhotoItem: PhotosPickerItem?
+  @State private var selectedPhotoItems: [PhotosPickerItem] = []
 
+  private let maxPhotoSelectionCount = 12
   private let sources: [CollectionEntry.Source] = [.text, .link, .image, .voice, .file]
 
   var body: some View {
@@ -17,7 +18,12 @@ struct NookAddMenu: View {
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 12)], spacing: 12) {
         ForEach(sources, id: \.self) { source in
           if source == .image {
-            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+            PhotosPicker(
+              selection: $selectedPhotoItems,
+              maxSelectionCount: maxPhotoSelectionCount,
+              selectionBehavior: .ordered,
+              matching: .images
+            ) {
               NookAddSourceTile(source: source)
             }
             .buttonStyle(.plain)
@@ -35,8 +41,8 @@ struct NookAddMenu: View {
       Spacer(minLength: 0)
     }
     .padding(24)
-    .onChange(of: selectedPhotoItem) { _, newItem in
-      handlePhotoSelection(newItem)
+    .onChange(of: selectedPhotoItems) { _, newItems in
+      handlePhotoSelection(newItems)
     }
   }
 
@@ -45,29 +51,37 @@ struct NookAddMenu: View {
     model.add(source: source)
   }
 
-  private func handlePhotoSelection(_ item: PhotosPickerItem?) {
-    guard let item else {
+  private func handlePhotoSelection(_ items: [PhotosPickerItem]) {
+    guard !items.isEmpty else {
       return
     }
 
     dismiss()
-    loadPhoto(item)
+    loadPhotos(items)
   }
 
-  private func loadPhoto(_ item: PhotosPickerItem) {
+  private func loadPhotos(_ items: [PhotosPickerItem]) {
     Task {
-      do {
-        if let data = try await item.loadTransferable(type: Data.self) {
-          model.addImage(data: data)
-        } else {
-          model.showCaptureMessage("Nook could not read that image.")
+      var imageData: [Data] = []
+
+      for item in items {
+        do {
+          if let data = try await item.loadTransferable(type: Data.self) {
+            imageData.append(data)
+          }
+        } catch {
+          continue
         }
-      } catch {
+      }
+
+      if imageData.isEmpty {
         model.showCaptureMessage("Nook could not read that image.")
+      } else {
+        model.addImages(data: imageData)
       }
 
       await MainActor.run {
-        selectedPhotoItem = nil
+        selectedPhotoItems = []
       }
     }
   }

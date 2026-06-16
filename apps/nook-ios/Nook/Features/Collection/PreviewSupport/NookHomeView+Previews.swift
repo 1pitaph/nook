@@ -55,6 +55,14 @@ extension CollectionEntry {
   static var messageBubbleSamples: [CollectionEntry] {
     [
       CollectionEntry(
+        title: "Photos from library",
+        detail: "3 images selected from Photos.",
+        source: .image,
+        tags: ["image", "photo"],
+        imageData: NookPreviewImage.stackData.first,
+        imageDatas: NookPreviewImage.stackData
+      ),
+      CollectionEntry(
         title: "Photo from library",
         detail: "Image selected from Photos.",
         source: .image,
@@ -115,6 +123,26 @@ private enum NookPreviewImage {
     return image.jpegData(compressionQuality: 0.86)
   }
 
+  static var stackData: [Data] {
+    [
+      imageData(
+        background: UIColor(red: 0.78, green: 0.70, blue: 0.58, alpha: 1),
+        accent: UIColor(red: 0.64, green: 0.40, blue: 0.18, alpha: 1),
+        detail: UIColor(red: 0.96, green: 0.87, blue: 0.72, alpha: 1)
+      ),
+      imageData(
+        background: UIColor(red: 0.78, green: 0.84, blue: 0.76, alpha: 1),
+        accent: UIColor(red: 0.24, green: 0.42, blue: 0.30, alpha: 1),
+        detail: UIColor(red: 0.94, green: 0.96, blue: 0.90, alpha: 1)
+      ),
+      imageData(
+        background: UIColor(red: 0.89, green: 0.76, blue: 0.64, alpha: 1),
+        accent: UIColor(red: 0.60, green: 0.34, blue: 0.18, alpha: 1),
+        detail: UIColor(red: 0.98, green: 0.89, blue: 0.82, alpha: 1)
+      )
+    ]
+  }
+
   static var linkPreviewData: Data? {
     let renderer = UIGraphicsImageRenderer(size: CGSize(width: 520, height: 272))
     let image = renderer.image { context in
@@ -146,6 +174,35 @@ private enum NookPreviewImage {
       context.fill(CGRect(x: 24, y: 246, width: 220, height: 11))
     }
     return image.jpegData(compressionQuality: 0.88)
+  }
+
+  private static func imageData(
+    background: UIColor,
+    accent: UIColor,
+    detail: UIColor
+  ) -> Data {
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 420, height: 300))
+    let image = renderer.image { context in
+      background.setFill()
+      context.fill(CGRect(x: 0, y: 0, width: 420, height: 300))
+
+      detail.setFill()
+      context.fill(CGRect(x: 34, y: 36, width: 352, height: 212))
+
+      accent.setStroke()
+      context.cgContext.setLineWidth(6)
+      for index in 0..<7 {
+        let y = CGFloat(index) * 24 + 58
+        context.cgContext.move(to: CGPoint(x: 66, y: y))
+        context.cgContext.addLine(to: CGPoint(x: 336, y: y + 38))
+        context.cgContext.strokePath()
+      }
+
+      accent.withAlphaComponent(0.76).setFill()
+      context.fill(CGRect(x: 100, y: 118, width: 170, height: 78))
+    }
+
+    return image.jpegData(compressionQuality: 0.86) ?? Data()
   }
 }
 #endif

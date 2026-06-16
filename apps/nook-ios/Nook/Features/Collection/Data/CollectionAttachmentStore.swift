@@ -57,6 +57,20 @@ struct CollectionAttachmentStore {
     )
   }
 
+  func saveImages(_ imageData: [Data]) throws -> [CollectionImageAttachment] {
+    var savedAttachments: [CollectionImageAttachment] = []
+
+    do {
+      for data in imageData {
+        savedAttachments.append(try saveImage(data))
+      }
+      return savedAttachments
+    } catch {
+      savedAttachments.forEach(delete)
+      throw error
+    }
+  }
+
   func attachment(
     imageFileName: String?,
     thumbnailFileName: String?,
@@ -84,11 +98,31 @@ struct CollectionAttachmentStore {
     )
   }
 
+  func attachment(for record: CollectionImageAttachmentRecord) -> CollectionImageAttachment {
+    let imageURL = appSupportDirectory.appending(path: record.imageFileName)
+    let thumbnailURL = record.thumbnailFileName.map { cachesDirectory.appending(path: $0) }
+
+    return CollectionImageAttachment(
+      imageFileName: record.imageFileName,
+      thumbnailFileName: record.thumbnailFileName,
+      imageURL: imageURL,
+      thumbnailURL: thumbnailURL,
+      pixelWidth: record.pixelWidth,
+      pixelHeight: record.pixelHeight,
+      byteCount: record.byteCount,
+      contentType: record.contentType
+    )
+  }
+
   func delete(_ attachment: CollectionImageAttachment) {
     try? fileManager.removeItem(at: attachment.imageURL)
     if let thumbnailURL = attachment.thumbnailURL {
       try? fileManager.removeItem(at: thumbnailURL)
     }
+  }
+
+  func delete(_ attachments: [CollectionImageAttachment]) {
+    attachments.forEach(delete)
   }
 
   private func protectFile(at url: URL) throws {

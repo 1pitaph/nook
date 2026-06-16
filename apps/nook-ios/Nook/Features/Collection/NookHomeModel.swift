@@ -127,12 +127,21 @@ final class NookHomeModel {
   }
 
   func addImage(data: Data) {
+    addImages(data: [data])
+  }
+
+  func addImages(data imageData: [Data]) {
+    guard !imageData.isEmpty else {
+      activeSheet = .capture("Nook could not read that image.")
+      return
+    }
+
     mode = .sending
     do {
-      let entry = try collectionStore?.saveImage(
-        data: data,
+      let entry = try collectionStore?.saveImages(
+        data: imageData,
         entryFactory: entryFactory
-      ) ?? entryFactory.imageEntry(data: data)
+      ) ?? entryFactory.imageEntry(data: imageData)
       entries.insert(entry, at: 0)
       selectedSource = .text
       mode = .idle

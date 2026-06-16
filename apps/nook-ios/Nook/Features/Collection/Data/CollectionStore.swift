@@ -51,33 +51,36 @@ struct CollectionStore {
         continue
       }
 
-      if let attachment = attachment(for: persistedEntry) {
-        attachmentsToDelete.append(attachment)
-      }
+      attachmentsToDelete.append(contentsOf: attachments(for: persistedEntry))
 
       modelContext.delete(persistedEntry)
     }
 
     try modelContext.save()
 
-    for attachment in attachmentsToDelete {
-      attachmentStore.delete(attachment)
-    }
+    attachmentStore.delete(attachmentsToDelete)
   }
 
   func saveImage(
     data: Data,
     entryFactory: CollectionEntryFactory
   ) throws -> CollectionEntry {
-    let attachment = try attachmentStore.saveImage(data)
-    let entry = entryFactory.imageEntry(attachment: attachment)
+    try saveImages(data: [data], entryFactory: entryFactory)
+  }
+
+  func saveImages(
+    data imageData: [Data],
+    entryFactory: CollectionEntryFactory
+  ) throws -> CollectionEntry {
+    let attachments = try attachmentStore.saveImages(imageData)
+    let entry = entryFactory.imageEntry(attachments: attachments)
     modelContext.insert(PersistedCollectionEntry(entry: entry))
 
     do {
       try modelContext.save()
       return entry
     } catch {
-      attachmentStore.delete(attachment)
+      attachmentStore.delete(attachments)
       throw error
     }
   }
@@ -92,14 +95,20 @@ struct CollectionStore {
     return try modelContext.fetch(descriptor).first
   }
 
-  private func attachment(for entry: PersistedCollectionEntry) -> CollectionImageAttachment? {
-    attachmentStore.attachment(
+  private func attachments(for entry: PersistedCollectionEntry) -> [CollectionImageAttachment] {
+    if let imageAttachmentsData = entry.imageAttachmentsData,
+       let records = try? JSONDecoder().decode([CollectionImageAttachmentRecord].self, from: imageAttachmentsData),
+       !records.isEmpty {
+      return records.map { attachmentStore.attachment(for: $0) }
+    }
+
+    return attachmentStore.attachment(
       imageFileName: entry.imageFileName,
       thumbnailFileName: entry.thumbnailFileName,
       pixelWidth: entry.imagePixelWidth,
       pixelHeight: entry.imagePixelHeight,
       byteCount: entry.imageByteCount,
       contentType: entry.imageContentType
-    )
+    ).map { [$0] } ?? []
   }
 }

@@ -245,26 +245,33 @@ extension NookHomeModel {
   }
 
   private func copyImage(_ entry: CollectionEntry) {
-    guard let image = CollectionEntryImageResolver.image(for: entry) else {
+    let images = CollectionEntryImageResolver.images(for: entry)
+    guard !images.isEmpty else {
       return
     }
 
-    UIPasteboard.general.image = image
+    if images.count == 1 {
+      UIPasteboard.general.image = images[0]
+    } else {
+      UIPasteboard.general.images = images
+    }
   }
 
   private func shareImage(_ entry: CollectionEntry) {
-    guard let image = CollectionEntryImageResolver.image(for: entry) else {
+    let images = CollectionEntryImageResolver.images(for: entry)
+    guard !images.isEmpty else {
       return
     }
 
     activeShareItem = CollectionShareItem(
       title: entry.title,
-      items: [image]
+      items: images
     )
   }
 
   private func saveImage(_ entry: CollectionEntry) {
-    guard let image = CollectionEntryImageResolver.image(for: entry) else {
+    let images = CollectionEntryImageResolver.images(for: entry)
+    guard !images.isEmpty else {
       return
     }
 
@@ -277,14 +284,20 @@ extension NookHomeModel {
       }
 
       PHPhotoLibrary.shared().performChanges {
-        PHAssetChangeRequest.creationRequestForAsset(from: image)
+        for image in images {
+          PHAssetChangeRequest.creationRequestForAsset(from: image)
+        }
       } completionHandler: { success, _ in
         Task { @MainActor in
           self?.activeSheet = .capture(
-            success ? "Image saved to Photos." : "Nook could not save that image."
+            success ? Self.imageSaveSuccessMessage(count: images.count) : "Nook could not save that image."
           )
         }
       }
     }
+  }
+
+  private static func imageSaveSuccessMessage(count: Int) -> String {
+    count == 1 ? "Image saved to Photos." : "\(count) images saved to Photos."
   }
 }

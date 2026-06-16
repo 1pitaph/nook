@@ -10,6 +10,7 @@ final class PersistedCollectionEntry {
   var createdAt: Date
   var tags: [String]
   var linkURL: URL?
+  var imageAttachmentsData: Data?
   var imageFileName: String?
   var thumbnailFileName: String?
   var imagePixelWidth: Int?
@@ -25,6 +26,7 @@ final class PersistedCollectionEntry {
     createdAt = entry.createdAt
     tags = entry.tags
     linkURL = entry.linkURL
+    imageAttachmentsData = Self.encodedImageAttachments(entry.imageAttachments)
     imageFileName = entry.imageFileName
     thumbnailFileName = entry.thumbnailFileName
     imagePixelWidth = entry.imagePixelWidth
@@ -40,6 +42,7 @@ final class PersistedCollectionEntry {
     createdAt = entry.createdAt
     tags = entry.tags
     linkURL = entry.linkURL
+    imageAttachmentsData = Self.encodedImageAttachments(entry.imageAttachments)
     imageFileName = entry.imageFileName
     thumbnailFileName = entry.thumbnailFileName
     imagePixelWidth = entry.imagePixelWidth
@@ -49,7 +52,7 @@ final class PersistedCollectionEntry {
   }
 
   func entry(attachmentStore: CollectionAttachmentStore) -> CollectionEntry {
-    let attachment = attachmentStore.attachment(
+    let legacyAttachment = attachmentStore.attachment(
       imageFileName: imageFileName,
       thumbnailFileName: thumbnailFileName,
       pixelWidth: imagePixelWidth,
@@ -57,6 +60,12 @@ final class PersistedCollectionEntry {
       byteCount: imageByteCount,
       contentType: imageContentType
     )
+    let attachments = Self.decodedImageAttachments(
+      imageAttachmentsData,
+      attachmentStore: attachmentStore
+    )
+    let imageAttachments = attachments.isEmpty ? legacyAttachment.map { [$0] } ?? [] : attachments
+    let primaryAttachment = imageAttachments.first ?? legacyAttachment
 
     return CollectionEntry(
       id: id,
@@ -66,14 +75,36 @@ final class PersistedCollectionEntry {
       createdAt: createdAt,
       tags: tags,
       linkURL: linkURL,
-      imageFileName: imageFileName,
-      thumbnailFileName: thumbnailFileName,
-      imageURL: attachment?.imageURL,
-      thumbnailURL: attachment?.thumbnailURL,
-      imagePixelWidth: imagePixelWidth,
-      imagePixelHeight: imagePixelHeight,
-      imageByteCount: imageByteCount,
-      imageContentType: imageContentType
+      imageAttachments: imageAttachments,
+      imageFileName: primaryAttachment?.imageFileName ?? imageFileName,
+      thumbnailFileName: primaryAttachment?.thumbnailFileName ?? thumbnailFileName,
+      imageURL: primaryAttachment?.imageURL,
+      thumbnailURL: primaryAttachment?.thumbnailURL,
+      imagePixelWidth: primaryAttachment?.pixelWidth ?? imagePixelWidth,
+      imagePixelHeight: primaryAttachment?.pixelHeight ?? imagePixelHeight,
+      imageByteCount: primaryAttachment?.byteCount ?? imageByteCount,
+      imageContentType: primaryAttachment?.contentType ?? imageContentType
     )
+  }
+
+  private static func encodedImageAttachments(_ attachments: [CollectionImageAttachment]) -> Data? {
+    guard !attachments.isEmpty else {
+      return nil
+    }
+
+    let records = attachments.map(CollectionImageAttachmentRecord.init)
+    return try? JSONEncoder().encode(records)
+  }
+
+  private static func decodedImageAttachments(
+    _ data: Data?,
+    attachmentStore: CollectionAttachmentStore
+  ) -> [CollectionImageAttachment] {
+    guard let data,
+          let records = try? JSONDecoder().decode([CollectionImageAttachmentRecord].self, from: data) else {
+      return []
+    }
+
+    return records.map { attachmentStore.attachment(for: $0) }
   }
 }

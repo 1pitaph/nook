@@ -34,29 +34,44 @@ struct CollectionEntryFactory {
   }
 
   func imageEntry(data: Data) -> CollectionEntry {
-    CollectionEntry(
-      title: "Photo from library",
-      detail: "Image selected from Photos.",
+    imageEntry(data: [data])
+  }
+
+  func imageEntry(data imageData: [Data]) -> CollectionEntry {
+    let count = imageData.count
+
+    return CollectionEntry(
+      title: count == 1 ? "Photo from library" : "Photos from library",
+      detail: count == 1 ? "Image selected from Photos." : "\(count) images selected from Photos.",
       source: .image,
       tags: tagger.tags(for: "", source: .image, linkURL: nil),
-      imageData: data
+      imageData: imageData.first,
+      imageDatas: imageData
     )
   }
 
   func imageEntry(attachment: CollectionImageAttachment) -> CollectionEntry {
-    CollectionEntry(
-      title: "Photo from library",
-      detail: "Image selected from Photos.",
+    imageEntry(attachments: [attachment])
+  }
+
+  func imageEntry(attachments: [CollectionImageAttachment]) -> CollectionEntry {
+    let count = attachments.count
+    let primaryAttachment = attachments.first
+
+    return CollectionEntry(
+      title: count == 1 ? "Photo from library" : "Photos from library",
+      detail: count == 1 ? "Image selected from Photos." : "\(count) images selected from Photos.",
       source: .image,
       tags: tagger.tags(for: "", source: .image, linkURL: nil),
-      imageFileName: attachment.imageFileName,
-      thumbnailFileName: attachment.thumbnailFileName,
-      imageURL: attachment.imageURL,
-      thumbnailURL: attachment.thumbnailURL,
-      imagePixelWidth: attachment.pixelWidth,
-      imagePixelHeight: attachment.pixelHeight,
-      imageByteCount: attachment.byteCount,
-      imageContentType: attachment.contentType
+      imageAttachments: attachments,
+      imageFileName: primaryAttachment?.imageFileName,
+      thumbnailFileName: primaryAttachment?.thumbnailFileName,
+      imageURL: primaryAttachment?.imageURL,
+      thumbnailURL: primaryAttachment?.thumbnailURL,
+      imagePixelWidth: primaryAttachment?.pixelWidth,
+      imagePixelHeight: primaryAttachment?.pixelHeight,
+      imageByteCount: primaryAttachment?.byteCount,
+      imageContentType: primaryAttachment?.contentType
     )
   }
 }

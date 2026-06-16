@@ -47,6 +47,8 @@ struct CollectionEntry: Identifiable, Equatable {
   var tags: [String]
   var linkURL: URL?
   var imageData: Data?
+  var imageDatas: [Data]
+  var imageAttachments: [CollectionImageAttachment]
   var imageFileName: String?
   var thumbnailFileName: String?
   var imageURL: URL?
@@ -65,6 +67,8 @@ struct CollectionEntry: Identifiable, Equatable {
     tags: [String] = [],
     linkURL: URL? = nil,
     imageData: Data? = nil,
+    imageDatas: [Data] = [],
+    imageAttachments: [CollectionImageAttachment] = [],
     imageFileName: String? = nil,
     thumbnailFileName: String? = nil,
     imageURL: URL? = nil,
@@ -82,6 +86,8 @@ struct CollectionEntry: Identifiable, Equatable {
     self.tags = tags
     self.linkURL = linkURL
     self.imageData = imageData
+    self.imageDatas = imageDatas
+    self.imageAttachments = imageAttachments
     self.imageFileName = imageFileName
     self.thumbnailFileName = thumbnailFileName
     self.imageURL = imageURL
